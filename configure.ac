@@ -19,7 +19,7 @@ dnl
 
 AC_PREREQ([2.69])
 
-AC_INIT([transmission-remote-gtk], [1.4.1],
+AC_INIT([transmission-remote-gtk], [1.4.2],
         [https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([config.h])
@@ -45,8 +45,10 @@ AC_PATH_PROG([POD2MAN], [pod2man])
 LT_PREREQ([2.2.0])
 LT_INIT
 LT_LIB_M
-AM_GNU_GETTEXT_VERSION([0.19.6])
 AM_GNU_GETTEXT([external])
+# FIXME: Remove AM_GNU_GETTEXT_VERSION once autoreconf supports REQUIRE_VERSION
+AM_GNU_GETTEXT_VERSION([0.19.6])
+AM_GNU_GETTEXT_REQUIRE_VERSION([0.19.6])
 PKG_PROG_PKG_CONFIG([0.28])
 DESKTOP_FILE
 APPSTREAM_XML
