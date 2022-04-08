@@ -6,6 +6,7 @@ transmission-remote-gtk (1.4.2-1) UNRELEASED; urgency=medium
   * Bump debhelper from old 12 to 13.
   * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
     Repository-Browse.
+  * Drop unnecessary dependency on dh-autoreconf.
 
  -- Barak A. Pearlmutter <bap@debian.org>  Fri, 08 Apr 2022 13:10:24 -0000
 
