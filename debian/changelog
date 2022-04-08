@@ -8,6 +8,7 @@ transmission-remote-gtk (1.4.2-1) UNRELEASED; urgency=medium
     Repository-Browse.
   * Drop unnecessary dependency on dh-autoreconf.
   * Update standards version to 4.6.0, no changes needed.
+  * Avoid explicitly specifying -Wl,--as-needed linker flag.
 
  -- Barak A. Pearlmutter <bap@debian.org>  Fri, 08 Apr 2022 13:10:24 -0000
 
