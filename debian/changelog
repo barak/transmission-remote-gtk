@@ -2,6 +2,7 @@ transmission-remote-gtk (1.4.2-1) UNRELEASED; urgency=medium
 
   * Trim trailing whitespace.
   * Use secure copyright file specification URI.
+  * Refer to common license file for CC0-1.0.
 
  -- Barak A. Pearlmutter <bap@debian.org>  Fri, 08 Apr 2022 13:10:24 -0000
 
