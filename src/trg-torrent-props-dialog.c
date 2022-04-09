@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -245,7 +243,6 @@ static GtkWidget *info_page_new(TrgTorrentPropsDialog * dialog)
     hig_workarea_add_row(t, &row, _("Error:"), l, NULL);
     priv->error_lb = l;
 
-    hig_workarea_add_section_divider(t, &row);
     hig_workarea_add_section_title(t, &row, _("Details"));
 
     /* destination */
@@ -287,9 +284,9 @@ static GtkWidget *info_page_new(TrgTorrentPropsDialog * dialog)
     gtk_frame_set_shadow_type(GTK_FRAME(fr), GTK_SHADOW_IN);
     gtk_container_add(GTK_CONTAINER(fr), sw);
     w = hig_workarea_add_tall_row(t, &row, _("Comment:"), fr, NULL);
-    gtk_misc_set_alignment(GTK_MISC(w), 0.0f, 0.0f);
+    gtk_widget_set_halign(w, GTK_ALIGN_START);
+    gtk_widget_set_valign(w, GTK_ALIGN_START);
 
-    hig_workarea_add_section_divider(t, &row);
     return t;
 }
 
@@ -548,9 +545,9 @@ static GObject *trg_torrent_props_dialog_constructor(GType type,
     gtk_window_set_transient_for(window, GTK_WINDOW(priv->parent));
     gtk_window_set_destroy_with_parent(window, TRUE);
 
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_CLOSE,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_Close"),
                           GTK_RESPONSE_CLOSE);
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_OK,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_OK"),
                           GTK_RESPONSE_OK);
 
     gtk_container_set_border_width(GTK_CONTAINER(object), GUI_PAD);

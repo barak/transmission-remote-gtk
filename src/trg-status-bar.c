@@ -17,13 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
+#include <pango/pango.h>
 
 #include "trg-prefs.h"
 #include "trg-main-window.h"
@@ -45,7 +44,7 @@
  * main window, which calls this. Session updates happen every 10 torrent-get updates.
  */
 
-G_DEFINE_TYPE(TrgStatusBar, trg_status_bar, GTK_TYPE_HBOX)
+G_DEFINE_TYPE(TrgStatusBar, trg_status_bar, GTK_TYPE_BOX)
 #define TRG_STATUS_BAR_GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), TRG_TYPE_STATUS_BAR, TrgStatusBarPrivate))
 typedef struct _TrgStatusBarPrivate TrgStatusBarPrivate;
@@ -85,15 +84,15 @@ turtle_toggle(GtkWidget * w, GdkEventButton * event, gpointer data)
     TrgStatusBarPrivate *priv = TRG_STATUS_BAR_GET_PRIVATE(data);
     JsonNode *req = session_set();
     JsonObject *args = node_get_arguments(req);
-    gchar *stockName;
+    const gchar *iconName;
     gboolean altSpeedOn;
 
-    gtk_image_get_stock(GTK_IMAGE(priv->turtleImage), &stockName, NULL);
-    altSpeedOn = g_strcmp0(stockName, "alt-speed-on") == 0;
+    gtk_image_get_icon_name(GTK_IMAGE(priv->turtleImage), &iconName, NULL);
+    altSpeedOn = g_strcmp0(iconName, "alt-speed-on") == 0;
 
-    gtk_image_set_from_stock(GTK_IMAGE(priv->turtleImage),
-                             altSpeedOn ? "alt-speed-off" : "alt-speed-on",
-                             GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_image_set_from_icon_name(GTK_IMAGE(priv->turtleImage),
+                                 altSpeedOn ? "alt-speed-off" : "alt-speed-on",
+                                 GTK_ICON_SIZE_SMALL_TOOLBAR);
     json_object_set_boolean_member(args, SGET_ALT_SPEED_ENABLED,
                                    !altSpeedOn);
 
@@ -106,6 +105,8 @@ static void trg_status_bar_init(TrgStatusBar * self)
     gtk_container_set_border_width(GTK_CONTAINER(self), 2);
 
     priv->info_lbl = gtk_label_new(_("Disconnected"));
+    gtk_label_set_ellipsize(GTK_LABEL(priv->info_lbl),
+                            PANGO_ELLIPSIZE_END);
     gtk_box_pack_start(GTK_BOX(self), priv->info_lbl, FALSE, TRUE, 0);
 
     priv->turtleImage = gtk_image_new();
@@ -119,10 +120,12 @@ static void trg_status_bar_init(TrgStatusBar * self)
     gtk_box_pack_end(GTK_BOX(self), priv->turtleEventBox, FALSE, TRUE, 5);
 
     priv->speed_lbl = gtk_label_new(NULL);
-    gtk_box_pack_end(GTK_BOX(self), priv->speed_lbl, FALSE, TRUE, 10);
+    gtk_label_set_ellipsize(GTK_LABEL(priv->speed_lbl),
+                            PANGO_ELLIPSIZE_START);
+    gtk_box_pack_end(GTK_BOX(self), priv->speed_lbl, FALSE, TRUE, 5);
 
     priv->free_lbl = gtk_label_new(NULL);
-    gtk_box_pack_end(GTK_BOX(self), priv->free_lbl, FALSE, TRUE, 30);
+    gtk_box_pack_end(GTK_BOX(self), priv->free_lbl, FALSE, TRUE, 5);
 }
 
 void
@@ -142,7 +145,7 @@ trg_status_bar_set_connected_label(TrgStatusBar * sb, JsonObject * session,
                                               TRG_PREFS_KEY_PROFILE_NAME,
                                               TRG_PREFS_CONNECTION);
     gchar *statusMsg =
-        g_strdup_printf(_("Connected: %s :: Transmission %s"),
+        g_strdup_printf(_("Connected: %s :: %s"),
                         profileName,
                         session_get_version_string(session));
 
@@ -180,9 +183,9 @@ void trg_status_bar_session_update(TrgStatusBar * sb, JsonObject * session)
         gtk_label_set_text(GTK_LABEL(priv->free_lbl), "");
     }
 
-    gtk_image_set_from_stock(GTK_IMAGE(priv->turtleImage),
-                             altSpeedEnabled ? "alt-speed-on" :
-                             "alt-speed-off", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_image_set_from_icon_name(GTK_IMAGE(priv->turtleImage),
+                                 altSpeedEnabled ? "alt-speed-on" :
+                                 "alt-speed-off", GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_widget_set_tooltip_text(priv->turtleImage,
                                 altSpeedEnabled ?
                                 _("Disable alternate speed limits") :
@@ -262,7 +265,10 @@ const gchar *trg_status_bar_get_speed_text(TrgStatusBar * s)
 
 TrgStatusBar *trg_status_bar_new(TrgMainWindow * win, TrgClient * client)
 {
-    TrgStatusBar *sb = g_object_new(TRG_TYPE_STATUS_BAR, NULL);
+    TrgStatusBar *sb = g_object_new(TRG_TYPE_STATUS_BAR,
+                                    "orientation",
+                                    GTK_ORIENTATION_HORIZONTAL,
+                                    NULL);
     TrgStatusBarPrivate *priv = TRG_STATUS_BAR_GET_PRIVATE(sb);
 
     priv->client = client;

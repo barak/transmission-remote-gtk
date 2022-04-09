@@ -17,16 +17,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <math.h>
 #include <stdint.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
-#ifdef ENABLE_NL_LANGINFO
+#if ENABLE_NL_LANGINFO
 #include <langinfo.h>
 #endif
 
@@ -320,7 +318,7 @@ static GtkWidget *trg_rprefs_alt_days(GList ** wl,
                                       GtkWidget *alt_time_check)
 {
     gchar *abdays_fallback[] = {_("Sun"), _("Mon"), _("Tue"), _("Wed"), _("Thu"), _("Fri"), _("Sat")};
-#ifdef ENABLE_NL_LANGINFO
+#if ENABLE_NL_LANGINFO
     nl_item abdays[] = {ABDAY_1, ABDAY_2, ABDAY_3, ABDAY_4, ABDAY_5, ABDAY_6, ABDAY_7};
 #endif
     GtkWidget *grid = gtk_grid_new();
@@ -328,10 +326,10 @@ static GtkWidget *trg_rprefs_alt_days(GList ** wl,
     g_signal_connect(G_OBJECT(alt_time_check), "toggled",
                      G_CALLBACK(toggle_active_arg_is_sensitive), grid);
 
-    guint64 days = json_object_get_int_member(Obj, key);
+    gint64 days = json_object_get_int_member(Obj, key);
 
     for(gint i = 0, x = 1; i < 7; i++, x<<=1) {
-#ifdef ENABLE_NL_LANGINFO
+#if ENABLE_NL_LANGINFO
         gchar *utf8 = g_convert_with_fallback(nl_langinfo(abdays[i]), -1, "utf-8",
                                               nl_langinfo(CODESET), NULL, NULL,
                                               NULL, NULL);
@@ -741,9 +739,9 @@ static GObject *trg_remote_prefs_dialog_constructor(GType type,
                                  GTK_WINDOW(priv->parent));
     gtk_window_set_destroy_with_parent(GTK_WINDOW(object), TRUE);
 
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_CLOSE,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_Close"),
                           GTK_RESPONSE_CLOSE);
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_OK,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_OK"),
                           GTK_RESPONSE_OK);
 
     gtk_container_set_border_width(GTK_CONTAINER(object), GUI_PAD);

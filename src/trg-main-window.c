@@ -17,13 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <gio/gio.h>
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <glib/gstdio.h>
@@ -33,10 +32,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <gdk/gdkkeysyms-compat.h>
 #include <curl/curl.h>
-#ifdef HAVE_LIBNOTIFY
-#include <libnotify/notify.h>
-#endif
-#ifdef HAVE_LIBAPPINDICATOR
+#if HAVE_LIBAPPINDICATOR
 #include <libappindicator/app-indicator.h>
 #endif
 
@@ -50,7 +46,6 @@
 #include "remote-exec.h"
 
 #include "trg-main-window.h"
-#include "trg-icons.h"
 #include "trg-about-window.h"
 #include "trg-tree-view.h"
 #include "trg-prefs.h"
@@ -73,7 +68,7 @@
 #include "trg-menu-bar.h"
 #include "trg-status-bar.h"
 #include "trg-stats-dialog.h"
-#ifdef HAVE_RSS
+#if HAVE_RSS
 #include "trg-rss-window.h"
 #endif
 #include "trg-remote-prefs-dialog.h"
@@ -84,17 +79,15 @@
 
 static void update_selected_torrent_notebook(TrgMainWindow * win,
                                              gint mode, gint64 id);
-#ifdef HAVE_LIBNOTIFY
 static void torrent_event_notification(TrgTorrentModel * model,
-                                       gchar * icon, gchar * desc,
-                                       gint tmout, gchar * prefKey,
+                                       gchar * icon_name, gchar * desc,
+                                       gchar * prefKey,
                                        GtkTreeIter * iter, gpointer data);
-#endif
-static void connchange_whatever_statusicon(TrgMainWindow * win,
-                                           gboolean connected);
-static void update_whatever_statusicon(TrgMainWindow * win,
-                                       trg_torrent_model_update_stats *
-                                       stats);
+static void connchange_whatever_tray(TrgMainWindow * win,
+                                     gboolean connected);
+static void update_whatever_tray(TrgMainWindow * win,
+                                 trg_torrent_model_update_stats *
+                                 stats);
 static void on_torrent_completed(TrgTorrentModel * model,
                                  GtkTreeIter * iter, gpointer data);
 static void on_torrent_added(TrgTorrentModel * model, GtkTreeIter * iter,
@@ -127,9 +120,8 @@ static void delete_cb(GtkWidget * w, TrgMainWindow * win);
 static void open_props_cb(GtkWidget * w, TrgMainWindow * win);
 static gint confirm_action_dialog(GtkWindow * gtk_win,
                                   GtkTreeSelection * selection,
-                                  const gchar * question_single,
-                                  const gchar * question_multi,
-                                  const gchar * action_stock);
+                                  const gchar * action_name,
+                                  const gchar * action_label);
 static void view_stats_toggled_cb(GtkWidget * w, gpointer data);
 static void view_states_toggled_cb(GtkCheckMenuItem * w,
                                    TrgMainWindow * win);
@@ -171,18 +163,13 @@ static void trg_main_window_set_property(GObject * object,
                                          GParamSpec * pspec);
 static void quit_cb(GtkWidget * w, gpointer data);
 static TrgMenuBar *trg_main_window_menu_bar_new(TrgMainWindow * win);
-static void status_icon_activated(GtkStatusIcon * icon,
-                                  TrgMainWindow * win);
-static gboolean trg_status_icon_popup_menu_cb(GtkStatusIcon * icon,
-                                              TrgMainWindow * win);
-static gboolean status_icon_button_press_event(GtkStatusIcon * icon,
-                                               GdkEventButton * event,
-                                               TrgMainWindow * win);
 static void clear_filter_entry_cb(GtkEntry * entry,
                                   GtkEntryIconPosition icon_pos,
                                   GdkEvent * event, gpointer user_data);
+static GtkWidget *trg_imagemenuitem_box(const gchar * text,
+                                        char * icon_name);
 static GtkWidget *trg_imagemenuitem_new(GtkMenuShell * shell,
-                                        const gchar * text, char *stock_id,
+                                        const gchar * text, char * icon_name,
                                         gboolean sensitive, GCallback cb,
                                         gpointer cbdata);
 static void set_limit_cb(GtkWidget * w, TrgMainWindow * win);
@@ -194,8 +181,9 @@ static GtkWidget *limit_menu_new(TrgMainWindow * win, gchar * title,
 static void trg_torrent_tv_view_menu(GtkWidget * treeview,
                                      GdkEventButton * event,
                                      TrgMainWindow * win);
-static GtkMenu *trg_status_icon_view_menu(TrgMainWindow * win,
-                                          const gchar * msg);
+#if HAVE_LIBAPPINDICATOR
+static GtkMenu *trg_tray_view_menu(TrgMainWindow * win, const gchar * msg);
+#endif
 static gboolean torrent_tv_button_pressed_cb(GtkWidget * treeview,
                                              GdkEventButton * event,
                                              gpointer userdata);
@@ -204,9 +192,6 @@ static gboolean torrent_tv_popup_menu_cb(GtkWidget * treeview,
 static void trg_main_window_set_hidden_to_tray(TrgMainWindow * win,
                                                gboolean hidden);
 static gboolean is_ready_for_torrent_action(TrgMainWindow * win);
-static gboolean window_state_event(TrgMainWindow * win,
-                                   GdkEventWindowState * event,
-                                   gpointer trayIcon);
 
 struct _TrgMainWindow
 {
@@ -222,11 +207,9 @@ typedef struct
     TrgStatusBar *statusBar;
     GtkWidget *iconStatusItem, *iconDownloadingItem, *iconSeedingItem,
         *iconSepItem;
-#ifdef HAVE_LIBAPPINDICATOR
+#if HAVE_LIBAPPINDICATOR
     AppIndicator *appIndicator;
 #endif
-    GtkMenu *iconMenu;
-    GtkStatusIcon *statusIcon;
     TrgStateSelector *stateSelector;
     GtkWidget *stateSelectorScroller;
     TrgGeneralPanel *genDetails;
@@ -319,18 +302,18 @@ update_selected_torrent_notebook(TrgMainWindow * win, gint mode, gint64 id)
     priv->selectedTorrentId = id;
 }
 
-#ifdef HAVE_LIBNOTIFY
 static void
 torrent_event_notification(TrgTorrentModel * model,
-                           gchar * icon, gchar * desc,
-                           gint tmout, gchar * prefKey,
+                           gchar * icon_name, gchar * desc,
+                           gchar * prefKey,
                            GtkTreeIter * iter, gpointer data)
 {
     TrgMainWindow *win = TRG_MAIN_WINDOW(data);
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
     TrgPrefs *prefs = trg_client_get_prefs(priv->client);
     gchar *name;
-    NotifyNotification *notify;
+    GIcon *icon;
+    GNotification *notify;
 
     if (!trg_prefs_get_bool(prefs, prefKey, TRG_PREFS_NOFLAGS))
         return;
@@ -338,49 +321,36 @@ torrent_event_notification(TrgTorrentModel * model,
     gtk_tree_model_get(GTK_TREE_MODEL(model), iter, TORRENT_COLUMN_NAME,
                        &name, -1);
 
-    notify = notify_notification_new(name, desc, icon
-#if !defined(NOTIFY_VERSION_MINOR) || (NOTIFY_VERSION_MAJOR == 0 && NOTIFY_VERSION_MINOR < 7)
-                                     , NULL
-#endif
-        );
+    icon = g_themed_icon_new(icon_name);
+    notify = g_notification_new(name);
+    g_notification_set_body(notify, desc);
+    g_notification_set_icon(notify, icon);
+    g_notification_set_priority(notify, G_NOTIFICATION_PRIORITY_LOW);
+    g_application_send_notification(g_application_get_default(), name, notify);
 
-#if !defined(NOTIFY_VERSION_MINOR) || (NOTIFY_VERSION_MAJOR == 0 && NOTIFY_VERSION_MINOR < 7)
-    if (priv->statusIcon && gtk_status_icon_is_embedded(priv->statusIcon))
-        notify_notification_attach_to_status_icon(notify,
-                                                  priv->statusIcon);
-#endif
-
-    notify_notification_set_urgency(notify, NOTIFY_URGENCY_LOW);
-    notify_notification_set_timeout(notify, tmout);
-
+    g_object_unref(notify);
+    g_object_unref(icon);
     g_free(name);
-
-    notify_notification_show(notify, NULL);
 }
-#endif
 
 static void
 on_torrent_completed(TrgTorrentModel * model,
                      GtkTreeIter * iter, gpointer data)
 {
-#ifdef HAVE_LIBNOTIFY
-    torrent_event_notification(model, GTK_STOCK_APPLY,
+    torrent_event_notification(model, "trg-gtk-apply",
                                _("This torrent has completed."),
-                               TORRENT_COMPLETE_NOTIFY_TMOUT,
-                               TRG_PREFS_KEY_COMPLETE_NOTIFY, iter, data);
-#endif
+                               TRG_PREFS_KEY_COMPLETE_NOTIFY,
+                               iter, data);
 }
 
 static void
 on_torrent_added(TrgTorrentModel * model, GtkTreeIter * iter,
                  gpointer data)
 {
-#ifdef HAVE_LIBNOTIFY
-    torrent_event_notification(model, GTK_STOCK_ADD,
+    torrent_event_notification(model, "list-add",
                                _("This torrent has been added."),
-                               TORRENT_ADD_NOTIFY_TMOUT,
-                               TRG_PREFS_KEY_ADD_NOTIFY, iter, data);
-#endif
+                               TRG_PREFS_KEY_ADD_NOTIFY,
+                               iter, data);
 }
 
 static gboolean
@@ -426,11 +396,7 @@ destroy_window(TrgMainWindow * win, gpointer data G_GNUC_UNUSED)
                           TRG_TREE_VIEW_PERSIST_LAYOUT);
     trg_prefs_save(prefs);
 
-#if WIN32
-    gtk_main_quit();
-#else
     g_application_quit (g_application_get_default ());
-#endif
 }
 
 static void open_props_cb(GtkWidget * w G_GNUC_UNUSED, TrgMainWindow * win)
@@ -821,9 +787,8 @@ static void down_queue_cb(GtkWidget * w G_GNUC_UNUSED, TrgMainWindow * win)
 static gint
 confirm_action_dialog(GtkWindow * gtk_win,
                       GtkTreeSelection * selection,
-                      const gchar * question_single,
-                      const gchar * question_multi,
-                      const gchar * action_stock)
+                      const gchar * action_name,
+                      const gchar * action_label)
 {
     TrgMainWindow *win = TRG_MAIN_WINDOW(gtk_win);
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
@@ -853,28 +818,26 @@ confirm_action_dialog(GtkWindow * gtk_win,
                                                     GTK_DIALOG_DESTROY_WITH_PARENT,
                                                     GTK_MESSAGE_QUESTION,
                                                     GTK_BUTTONS_NONE,
-                                                    question_single, name);
+                                                    _("<big><b>%s \"%s\"?</b></big>"),
+                                                    action_name, name);
         g_free(name);
     } else if (selectCount > 1) {
         dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(win),
                                                     GTK_DIALOG_DESTROY_WITH_PARENT,
                                                     GTK_MESSAGE_QUESTION,
                                                     GTK_BUTTONS_NONE,
-                                                    question_multi,
-                                                    selectCount);
+                                                    _("<big><b>%s %d torrents?</b></big>"),
+                                                    action_name, selectCount);
 
     } else {
         return 0;
     }
 
-    gtk_dialog_add_buttons(GTK_DIALOG(dialog), GTK_STOCK_CANCEL,
-                           GTK_RESPONSE_CANCEL, action_stock,
+    gtk_dialog_add_buttons(GTK_DIALOG(dialog), _("_Cancel"),
+                           GTK_RESPONSE_CANCEL, action_label,
                            GTK_RESPONSE_ACCEPT, NULL);
     gtk_dialog_set_default_response(GTK_DIALOG(dialog),
                                     GTK_RESPONSE_CANCEL);
-    gtk_dialog_set_alternative_button_order(GTK_DIALOG(dialog),
-                                            GTK_RESPONSE_ACCEPT,
-                                            GTK_RESPONSE_CANCEL, -1);
 
     response = gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
@@ -911,10 +874,8 @@ static void remove_cb(GtkWidget * w G_GNUC_UNUSED, TrgMainWindow * win)
         gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->torrentTreeView));
     ids = build_json_id_array(priv->torrentTreeView);
 
-    if (confirm_action_dialog(GTK_WINDOW(win), selection, _
-                              ("<big><b>Remove torrent \"%s\"?</b></big>"),
-                              _("<big><b>Remove %d torrents?</b></big>"),
-                              GTK_STOCK_REMOVE) == GTK_RESPONSE_ACCEPT)
+    if (confirm_action_dialog(GTK_WINDOW(win), selection, _("Remove"),
+                              _("_Remove")) == GTK_RESPONSE_ACCEPT)
         dispatch_async(priv->client, torrent_remove(ids, FALSE),
                        on_generic_interactive_action_response, win);
     else
@@ -934,11 +895,9 @@ static void delete_cb(GtkWidget * w G_GNUC_UNUSED, TrgMainWindow * win)
     if (!is_ready_for_torrent_action(win))
         return;
 
-    if (confirm_action_dialog(GTK_WINDOW(win), selection, _
-                              ("<big><b>Remove and delete torrent \"%s\"?</b></big>"),
-                              _
-                              ("<big><b>Remove and delete %d torrents?</b></big>"),
-                              GTK_STOCK_DELETE) == GTK_RESPONSE_ACCEPT)
+    if (confirm_action_dialog(GTK_WINDOW(win), selection,
+                              _("Remove and delete"),
+                              _("_Delete")) == GTK_RESPONSE_ACCEPT)
         dispatch_async(priv->client, torrent_remove(ids, TRUE),
                        on_delete_complete, win);
     else
@@ -959,7 +918,7 @@ static void view_stats_toggled_cb(GtkWidget * w, gpointer data)
     }
 }
 
-#ifdef HAVE_RSS
+#if HAVE_RSS
 static void view_rss_toggled_cb(GtkWidget * w, gpointer data)
 {
     TrgMainWindow *win = TRG_MAIN_WINDOW(data);
@@ -1032,9 +991,8 @@ static GtkWidget *trg_main_window_notebook_new(TrgMainWindow * win)
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(genScrolledWin),
                                    GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_AUTOMATIC);
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW
-                                          (genScrolledWin),
-                                          GTK_WIDGET(priv->genDetails));
+    gtk_container_add(GTK_CONTAINER(genScrolledWin),
+                      GTK_WIDGET(priv->genDetails));
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), genScrolledWin,
                              gtk_label_new(_("General")));
 
@@ -1203,8 +1161,9 @@ TRANSMISSION_MIN_SUPPORTED, version);
 }
 
 static void
-connchange_whatever_statusicon(TrgMainWindow * win, gboolean connected)
+connchange_whatever_tray(TrgMainWindow * win, gboolean connected)
 {
+#if HAVE_LIBAPPINDICATOR
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
     TrgPrefs *prefs = trg_client_get_prefs(priv->client);
     gchar *display = connected ?
@@ -1212,37 +1171,23 @@ connchange_whatever_statusicon(TrgMainWindow * win, gboolean connected)
                              TRG_PREFS_CONNECTION) :
         g_strdup(_("Disconnected"));
 
-#ifdef HAVE_LIBAPPINDICATOR
     if (priv->appIndicator) {
-        GtkMenu *menu = trg_status_icon_view_menu(win, display);
+        GtkMenu *menu = trg_tray_view_menu(win, display);
         app_indicator_set_menu(priv->appIndicator, menu);
-    } else {
-#else
-    if (1) {
-#endif
-        if (priv->iconMenu)
-            gtk_widget_destroy(GTK_WIDGET(priv->iconMenu));
-
-        priv->iconMenu = trg_status_icon_view_menu(win, display);
-
-        if (priv->statusIcon)
-            gtk_status_icon_set_tooltip_text(priv->statusIcon, display);
     }
 
     g_free(display);
+#endif
 }
 
 static void
-update_whatever_statusicon(TrgMainWindow * win,
-                           trg_torrent_model_update_stats * stats)
+update_whatever_tray(TrgMainWindow * win,
+                     trg_torrent_model_update_stats * stats)
 {
+#if HAVE_LIBAPPINDICATOR
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
 
-#ifdef HAVE_LIBAPPINDICATOR
-    if (!priv->appIndicator && !priv->statusIcon)
-#else
-    if (!priv->statusIcon)
-#endif
+    if (!priv->appIndicator)
         return;
 
     gtk_widget_set_visible(priv->iconSeedingItem, stats != NULL);
@@ -1268,6 +1213,7 @@ update_whatever_statusicon(TrgMainWindow * win,
                                 seedingLabel);
         g_free(seedingLabel);
     }
+#endif
 }
 
 /*
@@ -1357,7 +1303,7 @@ static gboolean on_torrent_get(gpointer data, int mode)
 
     update_selected_torrent_notebook(win, mode, priv->selectedTorrentId);
     trg_status_bar_update(priv->statusBar, stats, client);
-    update_whatever_statusicon(win, stats);
+    update_whatever_tray(win, stats);
 
 #if TRG_WITH_GRAPH
     if (priv->graphNotebookIndex >= 0)
@@ -1724,14 +1670,12 @@ trg_main_window_conn_changed(TrgMainWindow * win, gboolean connected)
 #endif
 
         trg_torrent_model_remove_all(priv->torrentModel);
-
-        g_source_remove(priv->timerId);
-        g_source_remove(priv->sessionTimerId);
-        priv->sessionTimerId = priv->timerId = 0;
+        g_clear_handle_id(&priv->timerId, g_source_remove);
+        g_clear_handle_id(&priv->sessionTimerId, g_source_remove);
     }
 
     trg_client_status_change(tc, connected);
-    connchange_whatever_statusicon(win, connected);
+    connchange_whatever_tray(win, connected);
 }
 
 static void
@@ -1794,7 +1738,7 @@ static TrgMenuBar *trg_main_window_menu_bar_new(TrgMainWindow * win)
 #if TRG_WITH_GRAPH
     *b_show_graph,
 #endif
-#ifdef HAVE_RSS
+#if HAVE_RSS
     *b_view_rss,
 #endif
     *b_start_now, *b_copy_magnetlink;
@@ -1825,7 +1769,7 @@ static TrgMenuBar *trg_main_window_menu_bar_new(TrgMainWindow * win)
 #if TRG_WITH_GRAPH
                  "show-graph", &b_show_graph,
 #endif
-#ifdef HAVE_RSS
+#if HAVE_RSS
                  "view-rss-button", &b_view_rss,
 #endif
                  "up-queue", &b_up_queue, "down-queue", &b_down_queue,
@@ -1875,7 +1819,7 @@ static TrgMenuBar *trg_main_window_menu_bar_new(TrgMainWindow * win)
                      G_CALLBACK(view_states_toggled_cb), win);
     g_signal_connect(b_view_stats, "activate",
                      G_CALLBACK(view_stats_toggled_cb), win);
-#ifdef HAVE_RSS
+#if HAVE_RSS
     g_signal_connect(b_view_rss, "activate",
                      G_CALLBACK(view_rss_toggled_cb), win);
 #endif
@@ -1893,59 +1837,6 @@ static TrgMenuBar *trg_main_window_menu_bar_new(TrgMainWindow * win)
 }
 
 static void
-status_icon_activated(GtkStatusIcon * icon G_GNUC_UNUSED,
-                      TrgMainWindow * win)
-{
-    TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
-    TrgPrefs *prefs = trg_client_get_prefs(priv->client);
-
-    trg_main_window_set_hidden_to_tray(win,
-                                       !priv->hidden
-                                       && trg_prefs_get_bool(prefs,
-                                                             TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE,
-                                                             TRG_PREFS_GLOBAL));
-}
-
-static gboolean
-trg_status_icon_popup_menu_cb(GtkStatusIcon * icon, TrgMainWindow * win)
-{
-    TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
-
-    gtk_menu_popup(priv->iconMenu, NULL, NULL,
-#ifdef WIN32
-                   NULL,
-#else
-                   gtk_status_icon_position_menu,
-#endif
-                   priv->statusIcon, 0, gtk_get_current_event_time());
-
-    return TRUE;
-}
-
-static gboolean
-status_icon_button_press_event(GtkStatusIcon * icon,
-                               GdkEventButton * event, TrgMainWindow * win)
-{
-    TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
-
-    if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-
-        gtk_menu_popup(priv->iconMenu, NULL, NULL,
-#ifdef WIN32
-                       NULL,
-#else
-                       gtk_status_icon_position_menu,
-#endif
-                       priv->statusIcon,
-                       event->button,
-                       gdk_event_get_time((GdkEvent *) event));
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-
-static void
 clear_filter_entry_cb(GtkEntry * entry,
                       GtkEntryIconPosition icon_pos,
                       GdkEvent * event, gpointer user_data)
@@ -1953,17 +1844,31 @@ clear_filter_entry_cb(GtkEntry * entry,
     gtk_entry_set_text(entry, "");
 }
 
+static GtkWidget *trg_imagemenuitem_box(const gchar * text,
+                                        char *icon_name)
+{
+    GtkWidget *item, *box, *label, *icon;
+
+    item = gtk_menu_item_new();
+    box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    icon = gtk_image_new_from_icon_name(icon_name, GTK_ICON_SIZE_MENU);
+    label = gtk_label_new(text);
+
+    gtk_container_add(GTK_CONTAINER(box), icon);
+    gtk_container_add(GTK_CONTAINER(box), label);
+
+    gtk_container_add(GTK_CONTAINER(item), box);
+
+    return item;
+}
+
 static GtkWidget *trg_imagemenuitem_new(GtkMenuShell * shell,
-                                        const gchar * text, char *stock_id,
+                                        const gchar * text, char *icon_name,
                                         gboolean sensitive, GCallback cb,
                                         gpointer cbdata)
 {
-    GtkWidget *item = gtk_image_menu_item_new_with_label(stock_id);
 
-    gtk_image_menu_item_set_use_stock(GTK_IMAGE_MENU_ITEM(item), TRUE);
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM
-                                              (item), TRUE);
-    gtk_menu_item_set_label(GTK_MENU_ITEM(item), text);
+    GtkWidget *item = trg_imagemenuitem_box(text, icon_name);
     g_signal_connect(item, "activate", cb, cbdata);
     gtk_widget_set_sensitive(item, sensitive);
     gtk_menu_shell_append(shell, item);
@@ -2075,11 +1980,7 @@ static GtkWidget *priority_menu_new(TrgMainWindow * win, JsonArray * ids)
                          priv->selectedTorrentId, &t, NULL))
         selected_pri = torrent_get_bandwidth_priority(t);
 
-    toplevel = gtk_image_menu_item_new_with_label(GTK_STOCK_NETWORK);
-    gtk_image_menu_item_set_use_stock(GTK_IMAGE_MENU_ITEM(toplevel), TRUE);
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM
-                                              (toplevel), TRUE);
-    gtk_menu_item_set_label(GTK_MENU_ITEM(toplevel), _("Priority"));
+    toplevel = trg_imagemenuitem_box(_("Priority"), "network-workgroup");
 
     menu = gtk_menu_new();
 
@@ -2119,11 +2020,8 @@ static GtkWidget *limit_menu_new(TrgMainWindow * win, gchar * title,
         json_object_get_boolean_member(current,
                                        enabledKey) ?
         json_object_get_int_member(current, speedKey) : -1;
-    toplevel = gtk_image_menu_item_new_with_label(GTK_STOCK_NETWORK);
-    gtk_image_menu_item_set_use_stock(GTK_IMAGE_MENU_ITEM(toplevel), TRUE);
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM
-                                              (toplevel), TRUE);
-    gtk_menu_item_set_label(GTK_MENU_ITEM(toplevel), title);
+
+    toplevel = trg_imagemenuitem_box(title, "network-workgroup");
 
     menu = gtk_menu_new();
 
@@ -2232,34 +2130,36 @@ trg_torrent_tv_view_menu(GtkWidget * treeview,
     JsonArray *cmds;
 
     menu = gtk_menu_new();
+    gtk_menu_set_reserve_toggle_size(GTK_MENU(menu), FALSE);
+
     ids = build_json_id_array(TRG_TORRENT_TREE_VIEW(treeview));
 
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Properties"),
-                          GTK_STOCK_PROPERTIES, TRUE,
+                          "document-properties", TRUE,
                           G_CALLBACK(open_props_cb), win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Copy Magnet Link"),
-                          GTK_STOCK_COPY, TRUE,
+                          "edit-copy", TRUE,
                           G_CALLBACK(copy_magnetlink_cb), win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Resume"),
-                          GTK_STOCK_MEDIA_PLAY, TRUE,
+                          "media-playback-start", TRUE,
                           G_CALLBACK(resume_cb), win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Pause"),
-                          GTK_STOCK_MEDIA_PAUSE, TRUE,
+                          "media-playback-pause", TRUE,
                           G_CALLBACK(pause_cb), win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Verify"),
-                          GTK_STOCK_REFRESH, TRUE, G_CALLBACK(verify_cb),
+                          "view-refresh", TRUE, G_CALLBACK(verify_cb),
                           win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Re-announce"),
-                          GTK_STOCK_REFRESH, TRUE,
+                          "network-server", TRUE,
                           G_CALLBACK(reannounce_cb), win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Move"),
-                          GTK_STOCK_HARDDISK, TRUE, G_CALLBACK(move_cb),
+                          "drive-harddisk", TRUE, G_CALLBACK(move_cb),
                           win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Remove"),
-                          GTK_STOCK_REMOVE, TRUE, G_CALLBACK(remove_cb),
+                          "list-remove", TRUE, G_CALLBACK(remove_cb),
                           win);
     trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Remove and delete data"),
-                          GTK_STOCK_DELETE, TRUE, G_CALLBACK(delete_cb),
+                          "edit-delete", TRUE, G_CALLBACK(delete_cb),
                           win);
 
     cmds = trg_prefs_get_array(prefs, TRG_PREFS_KEY_EXEC_COMMANDS,
@@ -2276,13 +2176,8 @@ trg_torrent_tv_view_menu(GtkWidget * treeview,
                                   gtk_separator_menu_item_new());
             cmds_shell = GTK_MENU_SHELL(menu);
         } else {
-            GtkImageMenuItem *cmds_menu =
-                GTK_IMAGE_MENU_ITEM(gtk_image_menu_item_new_with_label
-                                    (GTK_STOCK_EXECUTE));
-            gtk_image_menu_item_set_use_stock(cmds_menu, TRUE);
-            gtk_image_menu_item_set_always_show_image(cmds_menu, TRUE);
-            gtk_menu_item_set_label(GTK_MENU_ITEM(cmds_menu),
-                                    _("Actions"));
+            GtkMenuItem *cmds_menu =
+                GTK_MENU_ITEM(gtk_menu_item_new_with_label(_("Execute")));
 
             cmds_shell = GTK_MENU_SHELL(gtk_menu_new());
             gtk_menu_item_set_submenu(GTK_MENU_ITEM(cmds_menu),
@@ -2297,7 +2192,7 @@ trg_torrent_tv_view_menu(GtkWidget * treeview,
             const gchar *cmd_label = json_object_get_string_member(cmd_obj,
                                                                    "label");
             GtkWidget *item = trg_imagemenuitem_new(cmds_shell, cmd_label,
-                                                    GTK_STOCK_EXECUTE,
+                                                    "system-run",
                                                     TRUE,
                                                     G_CALLBACK
                                                     (exec_cmd_cb), win);
@@ -2312,19 +2207,19 @@ trg_torrent_tv_view_menu(GtkWidget * treeview,
 
     if (priv->queuesEnabled) {
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Start Now"),
-                              GTK_STOCK_MEDIA_PLAY, TRUE,
+                              "media-playback-start", TRUE,
                               G_CALLBACK(start_now_cb), win);
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Move Up Queue"),
-                              GTK_STOCK_GO_UP, TRUE,
+                              "go-up", TRUE,
                               G_CALLBACK(up_queue_cb), win);
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Move Down Queue"),
-                              GTK_STOCK_GO_DOWN, TRUE,
+                              "go-down", TRUE,
                               G_CALLBACK(down_queue_cb), win);
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Bottom Of Queue"),
-                              GTK_STOCK_GOTO_BOTTOM, TRUE,
+                              "go-bottom", TRUE,
                               G_CALLBACK(bottom_queue_cb), win);
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Top Of Queue"),
-                              GTK_STOCK_GOTO_TOP, TRUE,
+                              "go-top", TRUE,
                               G_CALLBACK(top_queue_cb), win);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu),
                               gtk_separator_menu_item_new());
@@ -2345,13 +2240,11 @@ trg_torrent_tv_view_menu(GtkWidget * treeview,
 
     gtk_widget_show_all(menu);
 
-    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-                   (event != NULL) ? event->button : 0,
-                   gdk_event_get_time((GdkEvent *) event));
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
 }
 
-static GtkMenu *trg_status_icon_view_menu(TrgMainWindow * win,
-                                          const gchar * msg)
+#if HAVE_LIBAPPINDICATOR
+static GtkMenu *trg_tray_view_menu(TrgMainWindow * win, const gchar * msg)
 {
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
     TrgPrefs *prefs = trg_client_get_prefs(priv->client);
@@ -2383,11 +2276,7 @@ static GtkMenu *trg_status_icon_view_menu(TrgMainWindow * win,
     gtk_widget_set_sensitive(priv->iconSepItem, FALSE);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), priv->iconSepItem);
 
-    connect = gtk_image_menu_item_new_with_label(GTK_STOCK_CONNECT);
-    gtk_image_menu_item_set_use_stock(GTK_IMAGE_MENU_ITEM(connect), TRUE);
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(connect),
-                                              TRUE);
-    gtk_menu_item_set_label(GTK_MENU_ITEM(connect), _("Connect"));
+    connect = trg_imagemenuitem_box(_("Connect"), "trg-gtk-connect");
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(connect),
                               trg_menu_bar_file_connect_menu_new(win,
                                                                  prefs));
@@ -2395,23 +2284,23 @@ static GtkMenu *trg_status_icon_view_menu(TrgMainWindow * win,
 
     if (connected) {
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Disconnect"),
-                              GTK_STOCK_DISCONNECT, connected,
+                              "trg-gtk-disconnect", connected,
                               G_CALLBACK(disconnect_cb), win);
 
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Add"),
-                              GTK_STOCK_ADD, connected, G_CALLBACK(add_cb),
+                              "list-add", connected, G_CALLBACK(add_cb),
                               win);
 
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Add from URL"),
-                              GTK_STOCK_ADD, connected,
+                              "list-add", connected,
                               G_CALLBACK(add_url_cb), win);
 
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Resume All"),
-                              GTK_STOCK_MEDIA_PLAY, connected,
+                              "media-playback-start", connected,
                               G_CALLBACK(resume_all_cb), win);
 
         trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Pause All"),
-                              GTK_STOCK_MEDIA_PAUSE, connected,
+                              "media-playback-pause", connected,
                               G_CALLBACK(pause_all_cb), win);
 
         gtk_menu_shell_append(GTK_MENU_SHELL(menu),
@@ -2426,13 +2315,14 @@ static GtkMenu *trg_status_icon_view_menu(TrgMainWindow * win,
 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu),
                           gtk_separator_menu_item_new());
-    trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Quit"), GTK_STOCK_QUIT,
+    trg_imagemenuitem_new(GTK_MENU_SHELL(menu), _("Quit"), "application-exit",
                           TRUE, G_CALLBACK(quit_cb), win);
 
     gtk_widget_show_all(menu);
 
     return GTK_MENU(menu);
 }
+#endif
 
 static gboolean
 torrent_tv_button_pressed_cb(GtkWidget * treeview,
@@ -2481,8 +2371,9 @@ static void trg_main_window_set_hidden_to_tray(TrgMainWindow * win,
         gtk_window_deiconify(GTK_WINDOW(win));
         gtk_window_present(GTK_WINDOW(win));
 
+
         if (priv->timerId > 0) {
-            g_source_remove(priv->timerId);
+            g_clear_handle_id(&priv->timerId, g_source_remove);
             dispatch_async(priv->client,
                            torrent_get(TORRENT_GET_TAG_MODE_FULL),
                            on_torrent_get_update, win);
@@ -2492,42 +2383,18 @@ static void trg_main_window_set_hidden_to_tray(TrgMainWindow * win,
     priv->hidden = hidden;
 }
 
-static gboolean
-window_state_event(TrgMainWindow * win,
-                   GdkEventWindowState * event, gpointer trayIcon)
+
+void trg_main_window_remove_tray(TrgMainWindow * win)
 {
+#if HAVE_LIBAPPINDICATOR
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
-    TrgPrefs *prefs = trg_client_get_prefs(priv->client);
 
-    if (priv->statusIcon
-        && (event->changed_mask & GDK_WINDOW_STATE_ICONIFIED)
-        && (event->new_window_state & GDK_WINDOW_STATE_ICONIFIED)
-        && trg_prefs_get_bool(prefs, TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE,
-                              TRG_PREFS_GLOBAL)) {
-        trg_main_window_set_hidden_to_tray(win, TRUE);
-        return TRUE;
-    }
+    if (priv->appIndicator)
+        app_indicator_set_status(priv->appIndicator,
+                                 APP_INDICATOR_STATUS_PASSIVE);
 
-    return FALSE;
-}
-
-void trg_main_window_remove_status_icon(TrgMainWindow * win)
-{
-    TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
-#ifdef HAVE_LIBAPPINDICATOR
-    if (priv->appIndicator) {
-        g_object_unref(G_OBJECT(priv->appIndicator));
-
-        priv->appIndicator = NULL;
-    } else {
-#else
-    if (1) {
+    g_clear_object(&priv->appIndicator);
 #endif
-        if (priv->statusIcon)
-            g_object_unref(G_OBJECT(priv->statusIcon));
-
-        priv->statusIcon = NULL;
-    }
 }
 
 #if TRG_WITH_GRAPH
@@ -2560,46 +2427,22 @@ void trg_main_window_remove_graph(TrgMainWindow * win)
 }
 #endif
 
-/*static gboolean status_icon_size_changed(GtkStatusIcon *status_icon,
-        gint           size,
-        gpointer       user_data)
+void trg_main_window_add_tray(TrgMainWindow * win)
 {
-    gtk_status_icon_set_from_icon_name(status_icon, PACKAGE_NAME);
-    return TRUE;
-}*/
-
-void trg_main_window_add_status_icon(TrgMainWindow * win)
-{
+#if HAVE_LIBAPPINDICATOR
     TrgMainWindowPrivate *priv = trg_main_window_get_instance_private(win);
-#ifdef HAVE_LIBAPPINDICATOR
-    if ((priv->appIndicator =
-                       app_indicator_new(PACKAGE_NAME, PACKAGE_NAME,
-                                         APP_INDICATOR_CATEGORY_APPLICATION_STATUS)))
-    {
-        app_indicator_set_status(priv->appIndicator,
-                                 APP_INDICATOR_STATUS_ACTIVE);
-        app_indicator_set_menu(priv->appIndicator,
-                               trg_status_icon_view_menu(win, NULL));
-    } else {
-#else
-    if (1) {
-#endif
-        priv->statusIcon =
-            gtk_status_icon_new_from_icon_name(PACKAGE_NAME);
-        gtk_status_icon_set_screen(priv->statusIcon,
-                                   gtk_window_get_screen(GTK_WINDOW(win)));
-        g_signal_connect(priv->statusIcon, "activate",
-                         G_CALLBACK(status_icon_activated), win);
-        g_signal_connect(priv->statusIcon, "button-press-event",
-                         G_CALLBACK(status_icon_button_press_event), win);
-        g_signal_connect(priv->statusIcon, "popup-menu",
-                         G_CALLBACK(trg_status_icon_popup_menu_cb), win);
 
-        gtk_status_icon_set_visible(priv->statusIcon, TRUE);
+    if (!priv->appIndicator) {
+        priv->appIndicator = app_indicator_new(PACKAGE_NAME, PACKAGE_NAME,
+                                               APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+
+       app_indicator_set_menu(priv->appIndicator,
+                              trg_tray_view_menu(win, NULL));
     }
 
-    connchange_whatever_statusicon(win,
-                                   trg_client_is_connected(priv->client));
+    app_indicator_set_status(priv->appIndicator, APP_INDICATOR_STATUS_ACTIVE);
+    connchange_whatever_tray(win, trg_client_is_connected(priv->client));
+#endif
 }
 
 TrgStateSelector *trg_main_window_get_state_selector(TrgMainWindow * win)
@@ -2667,9 +2510,8 @@ static void on_dropped_file(GtkWidget * widget, GdkDragContext * context,
         gchar **uri_list = gtk_selection_data_get_uris(data);
         guint num_files = g_strv_length(uri_list);
         gchar **file_list = g_new0(gchar *, num_files + 1);
-        int i;
 
-        for (i = 0; i < num_files; i++)
+        for (guint i = 0; i < num_files; i++)
             file_list[i] = g_filename_from_uri(uri_list[i], NULL, NULL);
 
         g_strfreev(uri_list);
@@ -2713,7 +2555,6 @@ static GObject *trg_main_window_constructor(GType type,
     GtkWidget *outerVbox;
     GtkWidget *toolbarHbox;
     //GtkWidget *outerAlignment;
-    GtkIconTheme *theme;
     gint width, height, pos;
     gboolean tray;
     TrgPrefs *prefs;
@@ -2722,12 +2563,6 @@ static GObject *trg_main_window_constructor(GType type,
 
     prefs = trg_client_get_prefs(priv->client);
 
-    theme = gtk_icon_theme_get_default();
-    register_my_icons(theme);
-
-#ifdef HAVE_LIBNOTIFY
-    notify_init(PACKAGE_NAME);
-#endif
     gtk_window_set_default_icon_name(PACKAGE_NAME);
 
     gtk_window_set_title(GTK_WINDOW(self), _("Transmission Remote"));
@@ -2737,8 +2572,6 @@ static GObject *trg_main_window_constructor(GType type,
                      G_CALLBACK(delete_event), NULL);
     g_signal_connect(G_OBJECT(self), "destroy", G_CALLBACK(destroy_window),
                      NULL);
-    g_signal_connect(G_OBJECT(self), "window-state-event",
-                     G_CALLBACK(window_state_event), NULL);
     g_signal_connect(G_OBJECT(self), "configure-event",
                      G_CALLBACK(trg_main_window_config_event), NULL);
     g_signal_connect(G_OBJECT(self), "key-press-event",
@@ -2777,12 +2610,6 @@ static GObject *trg_main_window_constructor(GType type,
 
     outerVbox = trg_vbox_new(FALSE, 0);
 
-    /* Create a GtkAlignment to hold the outerVbox making possible
-     * some padding. */
-    //outerAlignment = gtk_alignment_new (0.5f, 0.5f, 1.0f, 1.0f);
-    //gtk_alignment_set_padding (GTK_ALIGNMENT (outerAlignment), 0, 0, 0, 0);
-    //gtk_container_add (GTK_CONTAINER (outerAlignment), outerVbox);
-
     gtk_container_add(GTK_CONTAINER(self), outerVbox);
 
     priv->menuBar = trg_main_window_menu_bar_new(self);
@@ -2795,8 +2622,8 @@ static GObject *trg_main_window_constructor(GType type,
                        TRUE, TRUE, 0);
 
     w = gtk_entry_new();
-    gtk_entry_set_icon_from_stock(GTK_ENTRY(w), GTK_ENTRY_ICON_SECONDARY,
-                                  GTK_STOCK_CLEAR);
+    gtk_entry_set_icon_from_icon_name(GTK_ENTRY(w), GTK_ENTRY_ICON_SECONDARY,
+                                      "edit-clear");
     g_signal_connect(w, "icon-release", G_CALLBACK(clear_filter_entry_cb),
                      NULL);
     gtk_box_pack_start(GTK_BOX(toolbarHbox), w, FALSE, FALSE, 0);
@@ -2838,9 +2665,9 @@ static GObject *trg_main_window_constructor(GType type,
     tray = trg_prefs_get_bool(prefs, TRG_PREFS_KEY_SYSTEM_TRAY,
                               TRG_PREFS_GLOBAL);
     if (tray)
-        trg_main_window_add_status_icon(self);
+        trg_main_window_add_tray(self);
     else
-        trg_main_window_remove_status_icon(self);
+        trg_main_window_remove_tray(self);
 
     priv->statusBar = trg_status_bar_new(self, priv->client);
     g_signal_connect(priv->client, "session-updated",

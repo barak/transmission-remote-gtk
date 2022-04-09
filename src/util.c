@@ -19,9 +19,7 @@
 
 /* Many of these functions are taken from the Transmission Project. */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <limits.h>
 #include <stdlib.h>
@@ -230,8 +228,7 @@ GRegex *trg_uri_host_regex_new(void)
 
 void g_str_slist_free(GSList * list)
 {
-    g_slist_foreach(list, (GFunc) g_free, NULL);
-    g_slist_free(list);
+    g_slist_free_full(list, (GDestroyNotify) g_free);
 }
 
 void rm_trailing_slashes(gchar * str)
@@ -492,7 +489,8 @@ gchar *epoch_to_string(gint64 epoch)
 }
 
 /* wrap a link in text with a hyperlink, for use in pango markup.
- * with or without any links - a newly allocated string is returned. */
+ * with or without any links - a newly allocated string is returned.
+ * Note that a markup-escaped string is always returned. */
 
 gchar *add_links_to_text(const gchar * original)
 {
@@ -517,7 +515,7 @@ gchar *add_links_to_text(const gchar * original)
       g_free(url);
       g_free(link);
     } else {
-      newText = g_strdup(original);
+      newText = g_markup_escape_text(original, -1);
     }
 
     g_regex_unref(regex);
@@ -567,7 +565,7 @@ GtkWidget *trg_vbox_new(gboolean homogeneous, gint spacing)
     return box;
 }
 
-#ifdef WIN32
+#ifdef G_OS_WIN32
 gchar *trg_win32_support_path(gchar * file)
 {
     gchar *moddir =
@@ -577,8 +575,3 @@ gchar *trg_win32_support_path(gchar * file)
     return path;
 }
 #endif
-
-gboolean is_unity(void)
-{
-    return g_strcmp0(g_getenv("XDG_CURRENT_DESKTOP"), "Unity") == 0;
-}

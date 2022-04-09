@@ -35,9 +35,6 @@ G_BEGIN_DECLS
 #define TRG_TYPE_MAIN_WINDOW (trg_main_window_get_type())
 G_DECLARE_FINAL_TYPE (TrgMainWindow, trg_main_window, TRG, MAIN_WINDOW, GtkApplicationWindow)
 
-#define TORRENT_COMPLETE_NOTIFY_TMOUT 8000
-#define TORRENT_ADD_NOTIFY_TMOUT 3000
-
 gint trg_add_from_filename(TrgMainWindow * win, gchar ** uris);
 gboolean on_session_set(gpointer data);
 gboolean on_delete_complete(gpointer data);
@@ -46,8 +43,8 @@ gboolean on_generic_interactive_action_response(gpointer data);
 void auto_connect_if_required(TrgMainWindow * win);
 void trg_main_window_set_start_args(TrgMainWindow * win, gchar ** args);
 TrgMainWindow *trg_main_window_new(TrgClient * tc, gboolean minonstart);
-void trg_main_window_add_status_icon(TrgMainWindow * win);
-void trg_main_window_remove_status_icon(TrgMainWindow * win);
+void trg_main_window_add_tray(TrgMainWindow * win);
+void trg_main_window_remove_tray(TrgMainWindow * win);
 void trg_main_window_add_graph(TrgMainWindow * win, gboolean show);
 void trg_main_window_remove_graph(TrgMainWindow * win);
 TrgStateSelector *trg_main_window_get_state_selector(TrgMainWindow * win);

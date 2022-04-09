@@ -13,9 +13,7 @@
 /* This cell renderer has been modified heavily to work with the
  * TrgTorrentModel instead of libtransmission. */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -308,14 +306,29 @@ static void getStatusString(GString * gstr, TorrentCellRenderer * r)
 {
     struct TorrentCellRendererPrivate *priv = r->priv;
     char buf[256];
+    const gchar *errstr;
 
     if (priv->error) {
-        const char *fmt[] = { NULL, N_("Tracker gave a warning: \"%s\""),
-            N_("Tracker gave an error: \"%s\""),
-            N_("Error: %s")
-        };
-        g_string_append_printf(gstr, _(fmt[priv->error]),
-                               torrent_get_errorstr(priv->json));
+        errstr = torrent_get_errorstr(priv->json);
+        switch (priv->error) {
+            case 0: /* OK */
+                break;
+            case 1: /* Tracking Warning */
+                g_string_append_printf(gstr,
+                                       _("Tracker gave a warning: \"%s\""),
+                                       errstr);
+                break;
+            case 2: /* Tracker Error */
+                g_string_append_printf(gstr,
+                                       _("Tracker gave an error: \"%s\""),
+                                       errstr);
+                break;
+            case 3: /* Local Error */
+                g_string_append_printf(gstr,
+                                       _("Error: \"%s\""),
+                                       errstr);
+                break;
+        }
     } else if ((priv->flags & TORRENT_FLAG_PAUSED)
                || (priv->flags & TORRENT_FLAG_WAITING_CHECK)
                || (priv->flags & TORRENT_FLAG_CHECKING)

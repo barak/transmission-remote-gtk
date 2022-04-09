@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -208,7 +206,7 @@ static void trg_gtk_app_init(TrgGtkApp * self)
 TrgGtkApp *trg_gtk_app_new(TrgClient * client)
 {
     return g_object_new(TRG_TYPE_GTK_APP,
-                        "application-id", "io.github.TransmissionRemoteGtk",
+                        "application-id", APPLICATION_ID,
                         "flags", G_APPLICATION_HANDLES_COMMAND_LINE,
                         "trg-client", client, NULL);
 }

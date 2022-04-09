@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <string.h>
 #include <glib/gi18n.h>
@@ -169,7 +167,7 @@ static GObject *trg_file_rename_dialog_constructor(GType type,
 
     gtk_window_set_destroy_with_parent(GTK_WINDOW(object), TRUE);
 
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_CANCEL,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_Close"),
                           GTK_RESPONSE_CANCEL);
     priv->rename_button =
         gtk_dialog_add_button(GTK_DIALOG(object), _("Rename"),
@@ -183,11 +181,7 @@ static GObject *trg_file_rename_dialog_constructor(GType type,
 
     gtk_dialog_set_default_response(GTK_DIALOG(object),
                                     GTK_RESPONSE_ACCEPT);
-
-    gtk_dialog_set_alternative_button_order(GTK_DIALOG(object),
-                                            GTK_RESPONSE_ACCEPT,
-                                            GTK_RESPONSE_CANCEL, -1);
-
+ 
     gtk_container_set_border_width(GTK_CONTAINER(t), GUI_PAD);
 
     gtk_box_pack_start(GTK_BOX
