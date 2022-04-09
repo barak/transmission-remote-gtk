@@ -1,0 +1,49 @@
+From: "Barak A. Pearlmutter" <barak+git@pearlmutter.net>
+Date: Sat, 9 Apr 2022 21:41:29 +0100
+Subject: libayatana-appindicator
+
+---
+ README.md             | 2 +-
+ meson.build           | 2 +-
+ src/trg-main-window.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/README.md b/README.md
+index b7564d6..923a611 100644
+--- a/README.md
++++ b/README.md
+@@ -29,7 +29,7 @@ The following packages are optional dependencies:
+  - libmrss >= 0.18, RSS feed support
+  - libproxy, HTTP proxy support
+  - libgeoip, country of origin of peers
+- - libappindicator, Application tray support
++ - libappindicator (or libayatana-appindicator3-dev), Application tray support
+ 
+ If these libraries are installed at build time they will be automatically
+ detected and linked for additional functionality.
+diff --git a/meson.build b/meson.build
+index f6d4193..64a5ab4 100644
+--- a/meson.build
++++ b/meson.build
+@@ -48,7 +48,7 @@ trg_deps = [gtk_dep, glib_dep, gio_dep, json_dep, libcurl_dep, gthread_dep]
+ rss_dep             = dependency('mrss', version: '>=0.18', required: get_option('mrss'))
+ geoip_dep           = dependency('geoip', required: get_option('geoip'))
+ libproxy_dep        = dependency('libproxy-1.0', required: get_option('libproxy'))
+-libappindicator_dep = dependency('appindicator3-0.1', required: get_option('libappindicator'))
++libappindicator_dep = dependency('ayatana-appindicator3-0.1', required: get_option('libappindicator'))
+ 
+ trg_deps += [geoip_dep, libproxy_dep, libappindicator_dep]
+ 
+diff --git a/src/trg-main-window.c b/src/trg-main-window.c
+index f2c6ab3..581d867 100644
+--- a/src/trg-main-window.c
++++ b/src/trg-main-window.c
+@@ -33,7 +33,7 @@
+ #include <gdk/gdkkeysyms-compat.h>
+ #include <curl/curl.h>
+ #if HAVE_LIBAPPINDICATOR
+-#include <libappindicator/app-indicator.h>
++#include <libayatana-appindicator/app-indicator.h>
+ #endif
+ 
+ #include "trg-client.h"

@@ -1,4 +1,4 @@
-transmission-remote-gtk (1.4.2-1) UNRELEASED; urgency=medium
+transmission-remote-gtk (1.5.0-1) UNRELEASED; urgency=medium
 
   * Trim trailing whitespace.
   * Use secure copyright file specification URI.
@@ -9,10 +9,15 @@ transmission-remote-gtk (1.4.2-1) UNRELEASED; urgency=medium
   * Drop unnecessary dependency on dh-autoreconf.
   * Update standards version to 4.6.0, no changes needed.
   * Avoid explicitly specifying -Wl,--as-needed linker flag.
-  * Forward port quilt patches; most are upstreamed
   * Rules-Requires-Root: no
+  * New upstream release
+  * All quilt patches either upstreamed or modify now-nonexistant build scripts
+  * Update dependencies to upstream build system switch from autotools to meson
+  * Enable libappindicator support using libayatana-appindicator3-dev,
+    which is license compatible
+  * Quilt patch man pages installation to /usr/share/man/man1/
 
- -- Barak A. Pearlmutter <bap@debian.org>  Fri, 08 Apr 2022 14:21:40 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 09 Apr 2022 21:56:33 +0100
 
 transmission-remote-gtk (1.4.1-5) unstable; urgency=medium
 
