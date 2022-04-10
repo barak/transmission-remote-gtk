@@ -9,7 +9,7 @@ Subject: libayatana-appindicator
  3 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/README.md b/README.md
-index b7564d6..923a611 100644
+index b7564d6..697f264 100644
 --- a/README.md
 +++ b/README.md
 @@ -29,7 +29,7 @@ The following packages are optional dependencies:
@@ -17,7 +17,7 @@ index b7564d6..923a611 100644
   - libproxy, HTTP proxy support
   - libgeoip, country of origin of peers
 - - libappindicator, Application tray support
-+ - libappindicator (or libayatana-appindicator3-dev), Application tray support
++ - libayatana-appindicator3, Application tray support
  
  If these libraries are installed at build time they will be automatically
  detected and linked for additional functionality.
