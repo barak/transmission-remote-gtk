@@ -4,8 +4,7 @@ Priority: optional
 Maintainer: Benjamin Barenblat <bbaren@debian.org>
 Build-Depends:
  appstream-util (>= 0.7.2),
- autoconf-archive,
- debhelper-compat (= 12),
+ debhelper-compat (= 13),
  gettext (>= 0.19.6),
  libappstream-glib-dev,
  libcurl4-openssl-dev | libcurl-ssl-dev,
@@ -15,8 +14,10 @@ Build-Depends:
  libjson-glib-dev (>= 0.8),
  libnotify-dev,
  libproxy-dev,
+ meson (>= 0.59.0),
  perl,
-Standards-Version: 4.5.1
+Standards-Version: 4.6.0
+Rules-Requires-Root: no
 Homepage: https://github.com/transmission-remote-gtk/transmission-remote-gtk
 Vcs-Git: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk.git
 Vcs-Browser: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk/
@@ -29,4 +30,3 @@ Description: GTK+ interface for the Transmission BitTorrent daemon
  Transmission BitTorrent daemon.  It is a full featured client,
  providing the ability to upload, queue, and delete torrent files,
  monitor downloads, and adjust speed limits.
-

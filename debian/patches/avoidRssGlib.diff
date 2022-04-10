@@ -12,32 +12,21 @@ time by not building code which will never get linked.
 
 Author: Benjamin Barenblat <bbaren@mit.edu>
 Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/21
---- a/Makefile.am
-+++ b/Makefile.am
-@@ -20,7 +20,10 @@
- ACLOCAL_AMFLAGS = -I m4
- AUTOMAKE_OPTIONS = foreign
- DISTCHECK_CONFIGURE_FLAGS = --disable-desktop-database-update
--SUBDIRS = extern src data po
-+SUBDIRS = src data po
-+if HAVE_RSS
-+SUBDIRS += extern
-+endif
+--- a/meson.build
++++ b/meson.build
+@@ -85,7 +84,6 @@
+ conf_data.set('G_DISABLE_CAST_CHECKS', not debug)
  
- EXTRA_DIST = config.rpath  README.md
+ # compile time features
+-conf_data.set10('HAVE_RSS', rss_dep.found())
+ conf_data.set10('HAVE_GEOIP', geoip_dep.found())
+ conf_data.set10('HAVE_LIBPROXY', libproxy_dep.found())
+ conf_data.set10('ENABLE_NL_LANGINFO', nl_langinfo)
+@@ -135,7 +133,4 @@
  
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -143,8 +143,10 @@
- 	  icon-turtle.h
- 
- transmission_remote_gtk_CPPFLAGS = \
--	-DLOCALEDIR=\""$(localedir)"\" \
--	-I$(top_srcdir)/extern
-+	-DLOCALEDIR=\""$(localedir)"\"
-+if HAVE_RSS
-+transmission_remote_gtk_CPPFLAGS += -I$(top_srcdir)/extern
-+endif
- 
- transmission_remote_gtk_CFLAGS = \
- 	$(TRG_CFLAGS) \
+ subdir('po')
+ subdir('data')
+-if rss_dep.found()
+-  subdir('extern/rss-glib')
+-endif
+ subdir('src')

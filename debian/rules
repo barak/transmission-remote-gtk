@@ -1,18 +1,8 @@
 #!/usr/bin/make -f
-# -*- makefile -*-
-
-# Avoid overlinking and reduce library dependencies.
-export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 %:
-	dh $@  --with autoreconf
-
-.PHONY: override_dh_autoreconf
-override_dh_autoreconf:
-	dh_autoreconf /usr/bin/env -- NOCONFIGURE=1 ./autogen.sh
+	dh $@
 
 .PHONY: override_dh_auto_configure
 override_dh_auto_configure:
-	dh_auto_configure -- --without-libappindicator --without-libmrss \
-		--disable-debug --disable-desktop-database-update \
-		--disable-silent-rules
+	dh_auto_configure -- -Dlibappindicator=disabled -Dmrss=disabled
