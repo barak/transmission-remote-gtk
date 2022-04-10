@@ -22,7 +22,7 @@ index b7564d6..923a611 100644
  If these libraries are installed at build time they will be automatically
  detected and linked for additional functionality.
 diff --git a/meson.build b/meson.build
-index f6d4193..64a5ab4 100644
+index 2acac20..28b7a3b 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -48,7 +48,7 @@ trg_deps = [gtk_dep, glib_dep, gio_dep, json_dep, libcurl_dep, gthread_dep]
