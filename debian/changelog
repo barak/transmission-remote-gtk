@@ -15,8 +15,9 @@ transmission-remote-gtk (1.5.1-1) UNRELEASED; urgency=medium
   * Enable libappindicator support using libayatana-appindicator3-dev,
     which is license compatible
   * New upstream release
+  * Simplify uscan support file
 
- -- Barak A. Pearlmutter <bap@debian.org>  Sun, 10 Apr 2022 11:22:34 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 11 Apr 2022 09:14:09 +0100
 
 transmission-remote-gtk (1.4.1-5) unstable; urgency=medium
 
