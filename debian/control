@@ -3,7 +3,6 @@ Section: net
 Priority: optional
 Maintainer: Benjamin Barenblat <bbaren@debian.org>
 Build-Depends:
- meson (>= 0.59.0),
  appstream-util (>= 0.7.2),
  debhelper-compat (= 13),
  gettext (>= 0.19.6),
