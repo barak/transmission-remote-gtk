@@ -4,6 +4,9 @@ transmission-remote-gtk (1.6.0-0.1) UNRELEASED; urgency=medium
     which is license compatible
   * Simplify uscan support file
   * New upstream release
+    - fixes locale file loading bug (closes: #1056593)
+    - supports libayatana-appindicator (closes: #1009274)
+    - JSON startup errors absent or reproducible (closes: #809850, #835895)
   * Update dependencies
   * Bump policy version
   * Update patches:
