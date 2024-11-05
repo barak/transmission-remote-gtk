@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -286,15 +284,13 @@ view_popup_menu_add_only(GtkWidget * treeview, GdkEventButton * event,
 
     menuitem =
         trg_menu_bar_item_new(GTK_MENU_SHELL(menu), _("Add"),
-                              GTK_STOCK_ADD, TRUE);
+                              TRUE);
     g_signal_connect(menuitem, "activate", G_CALLBACK(add_tracker),
                      treeview);
 
     gtk_widget_show_all(menu);
 
-    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-                   (event != NULL) ? event->button : 0,
-                   gdk_event_get_time((GdkEvent *) event));
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
 }
 
 static void
@@ -307,21 +303,19 @@ view_popup_menu(GtkWidget * treeview, GdkEventButton * event,
 
     menuitem =
         trg_menu_bar_item_new(GTK_MENU_SHELL(menu), _("Delete"),
-                              GTK_STOCK_DELETE, TRUE);
+                              TRUE);
     g_signal_connect(menuitem, "activate", G_CALLBACK(delete_tracker),
                      treeview);
 
     menuitem =
         trg_menu_bar_item_new(GTK_MENU_SHELL(menu), _("Add"),
-                              GTK_STOCK_ADD, TRUE);
+                              TRUE);
     g_signal_connect(menuitem, "activate", G_CALLBACK(add_tracker),
                      treeview);
 
     gtk_widget_show_all(menu);
 
-    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-                   (event != NULL) ? event->button : 0,
-                   gdk_event_get_time((GdkEvent *) event));
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
 }
 
 static gboolean

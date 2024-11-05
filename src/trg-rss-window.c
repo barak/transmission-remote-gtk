@@ -17,11 +17,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
-#ifdef HAVE_RSS
+#if HAVE_RSS
 
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
@@ -243,7 +241,7 @@ static GObject *trg_rss_window_constructor(GType type,
 {
     GObject *object;
     TrgRssWindowPrivate *priv;
-    GtkWidget *vbox;
+    GtkWidget *vbox, *img;
     GtkToolItem *item;
     GtkWidget *toolbar;
 
@@ -275,13 +273,18 @@ static GObject *trg_rss_window_constructor(GType type,
 
     toolbar = gtk_toolbar_new();
 
-    item = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
+
+    img = gtk_image_new_from_icon_name("view-refresh",
+                                       GTK_ICON_SIZE_LARGE_TOOLBAR);
+    item = gtk_tool_button_new(img, "Refresh");
     gtk_widget_set_sensitive(GTK_WIDGET(item), TRUE);
     gtk_tool_item_set_tooltip_text(item, "Refresh");
     g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_refresh), object);
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, 0);
 
-    item = gtk_tool_button_new_from_stock(GTK_STOCK_PREFERENCES);
+    img = gtk_image_new_from_icon_name("preferences-system",
+                                       GTK_ICON_SIZE_LARGE_TOOLBAR);
+    item = gtk_tool_button_new(img, "Refresh");
     gtk_widget_set_sensitive(GTK_WIDGET(item), TRUE);
     gtk_tool_item_set_tooltip_text(item, "Configure Feeds");
     g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_configure), object);

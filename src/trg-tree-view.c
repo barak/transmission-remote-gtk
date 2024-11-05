@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <stdlib.h>
 #include <gtk/gtk.h>
@@ -88,6 +86,16 @@ gboolean trg_tree_view_is_column_showing(TrgTreeView * tv, gint index)
     }
 
     return FALSE;
+}
+
+static void
+trg_column_description_free(trg_column_description * desc)
+{
+    if (desc) {
+        g_free(desc->header);
+        g_free(desc->id);
+        g_free(desc);
+    }
 }
 
 static void
@@ -367,9 +375,7 @@ view_popup_menu(GtkButton * button, GdkEventButton * event,
 
     gtk_widget_show_all(menu);
 
-    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-                   (event != NULL) ? event->button : 0,
-                   gdk_event_get_time((GdkEvent *) event));
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent*)event);
 }
 
 /* This used to get the column as an argument binded when the signal was
@@ -766,6 +772,21 @@ GList *trg_tree_view_get_selected_refs_list(GtkTreeView * tv)
     return refList;
 }
 
+static void trg_tree_view_dispose(GObject * object)
+{
+    G_OBJECT_CLASS(trg_tree_view_parent_class)->dispose(object);
+}
+
+static void trg_tree_view_finalize(GObject * object)
+{
+    TrgTreeViewPrivate *priv = TRG_TREE_VIEW_GET_PRIVATE(object);
+
+    g_list_free_full(priv->columns, (GDestroyNotify) trg_column_description_free);
+    g_free(priv->configId);
+
+    G_OBJECT_CLASS(trg_tree_view_parent_class)->finalize(object);
+}
+
 static void trg_tree_view_class_init(TrgTreeViewClass * klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
@@ -775,6 +796,8 @@ static void trg_tree_view_class_init(TrgTreeViewClass * klass)
     object_class->get_property = trg_tree_view_get_property;
     object_class->set_property = trg_tree_view_set_property;
     object_class->constructor = trg_tree_view_constructor;
+    object_class->dispose = trg_tree_view_dispose;
+    object_class->finalize = trg_tree_view_finalize;
 
     g_object_class_install_property(object_class,
                                     PROP_PREFS,
@@ -819,7 +842,6 @@ static void trg_tree_view_init(TrgTreeView * tv)
 {
     gtk_tree_view_set_rubber_banding(GTK_TREE_VIEW(tv), TRUE);
     gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(tv), TRUE);
-    gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(tv), TRUE);
     gtk_tree_selection_set_mode(gtk_tree_view_get_selection
                                 (GTK_TREE_VIEW(tv)),
                                 GTK_SELECTION_MULTIPLE);

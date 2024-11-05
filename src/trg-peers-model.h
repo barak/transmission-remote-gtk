@@ -21,13 +21,11 @@
 #ifndef TRG_PEERS_MODEL_H_
 #define TRG_PEERS_MODEL_H_
 
-#if HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
-#ifdef HAVE_GEOIP
+#if HAVE_GEOIP
 #include <GeoIP.h>
 #endif
 #include <glib-object.h>

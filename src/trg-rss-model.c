@@ -17,17 +17,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
-#ifdef HAVE_RSS
+#if HAVE_RSS
 
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
 #include <rss-glib/rss-glib.h>
 
-#include "config.h"
 #include "torrent.h"
 #include "trg-client.h"
 #include "trg-model.h"
@@ -142,7 +139,7 @@ void trg_rss_model_update(TrgRssModel * model) {
 	GList *li;
 
 	if (!feeds)
-		return;
+	    return;
 
 	cookie_regex = g_regex_new("(.*):COOKIE:(.*)", 0, 0, NULL);
 

@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -108,6 +106,21 @@ static void url_entry_changed(GtkWidget * w, gpointer data)
                              gtk_entry_get_text_length(GTK_ENTRY(w)) > 0);
 }
 
+static void url_entry_activate(GtkWidget * w, gpointer data)
+{
+    gtk_dialog_response(GTK_DIALOG(data), GTK_RESPONSE_ACCEPT);
+}
+
+static void clipboard_text_received(GtkClipboard *w, const char *text, void *text_widget)
+{
+    if (text && g_regex_match_simple("^(https?|magnet):", text, 0, 0)) {
+        GtkEntry *e = GTK_ENTRY(text_widget);
+        if (g_strcmp0("", gtk_entry_get_text(e)) == 0) {
+            gtk_entry_set_text(e, text);
+        }
+    }
+}
+
 static void trg_torrent_add_url_dialog_init(TrgTorrentAddUrlDialog * self)
 {
     TrgTorrentAddUrlDialogPrivate *priv =
@@ -121,6 +134,10 @@ static void trg_torrent_add_url_dialog_init(TrgTorrentAddUrlDialog * self)
 
     w = priv->urlEntry = gtk_entry_new();
     g_signal_connect(w, "changed", G_CALLBACK(url_entry_changed), self);
+    g_signal_connect(w, "activate", G_CALLBACK(url_entry_activate), self);
+    GtkClipboard *cb = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+    gtk_clipboard_request_text(cb, clipboard_text_received, w);
+
     hig_workarea_add_row(t, &row, _("URL:"), w, NULL);
 
     priv->startCheck =
@@ -130,20 +147,16 @@ static void trg_torrent_add_url_dialog_init(TrgTorrentAddUrlDialog * self)
     gtk_window_set_title(GTK_WINDOW(self), _("Add torrent from URL"));
     gtk_window_set_destroy_with_parent(GTK_WINDOW(self), TRUE);
 
-    gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_CLOSE,
+    gtk_dialog_add_button(GTK_DIALOG(self), _("_Close"),
                           GTK_RESPONSE_CANCEL);
     priv->addButton =
-        gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_ADD,
+        gtk_dialog_add_button(GTK_DIALOG(self), _("_Add"),
                               GTK_RESPONSE_ACCEPT);
     gtk_widget_set_sensitive(priv->addButton, FALSE);
 
     gtk_container_set_border_width(GTK_CONTAINER(self), GUI_PAD);
 
     gtk_dialog_set_default_response(GTK_DIALOG(self), GTK_RESPONSE_ACCEPT);
-
-    gtk_dialog_set_alternative_button_order(GTK_DIALOG(self),
-                                            GTK_RESPONSE_ACCEPT,
-                                            GTK_RESPONSE_CANCEL, -1);
 
     gtk_container_set_border_width(GTK_CONTAINER(t), GUI_PAD);
 

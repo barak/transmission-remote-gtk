@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <stdio.h>
 
@@ -79,6 +77,16 @@ JsonNode *torrent_set_location(JsonArray * array, gchar * location,
     JsonObject *args = node_get_arguments(req);
     json_object_set_boolean_member(args, FIELD_MOVE, move);
     json_object_set_string_member(args, FIELD_LOCATION, location);
+    return req;
+}
+
+JsonNode *torrent_rename_path(JsonArray * array, const gchar * path,
+                              const gchar * name)
+{
+    JsonNode *req = generic_request(METHOD_TORRENT_RENAME_PATH, array);
+    JsonObject *args = node_get_arguments(req);
+    json_object_set_string_member(args, FIELD_PATH, path);
+    json_object_set_string_member(args, FIELD_NAME, name);
     return req;
 }
 

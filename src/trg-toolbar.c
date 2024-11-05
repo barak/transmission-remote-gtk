@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -152,7 +150,9 @@ static GtkWidget *trg_toolbar_item_new(TrgToolbar * toolbar,
                                 int *index, gchar * icon,
                                 gboolean sensitive)
 {
-    GtkToolItem *w = gtk_tool_button_new_from_stock(icon);
+    GtkWidget *img = gtk_image_new_from_icon_name(icon,
+                                                  GTK_ICON_SIZE_LARGE_TOOLBAR);
+    GtkToolItem *w = gtk_tool_button_new(img, text);
     gtk_widget_set_sensitive(GTK_WIDGET(w), sensitive);
     gtk_tool_item_set_tooltip_text(w, text);
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), w, (*index)++);
@@ -194,8 +194,10 @@ static GObject *trg_toolbar_constructor(GType type,
                               GTK_ICON_SIZE_LARGE_TOOLBAR);
     gtk_toolbar_set_style(GTK_TOOLBAR(obj), GTK_TOOLBAR_BOTH_HORIZ);
 
+    GtkWidget *img = gtk_image_new_from_icon_name("trg-gtk-connect",
+                                                  GTK_ICON_SIZE_LARGE_TOOLBAR);
     priv->tb_connect =
-        GTK_WIDGET(gtk_menu_tool_button_new_from_stock(GTK_STOCK_CONNECT));
+        GTK_WIDGET(gtk_menu_tool_button_new(img, _("Connect")));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(priv->tb_connect),
                                    _("Connect"));
     gtk_tool_item_set_is_important (GTK_TOOL_ITEM (priv->tb_connect), TRUE);
@@ -209,43 +211,43 @@ static GObject *trg_toolbar_constructor(GType type,
 
     priv->tb_disconnect =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Disconnect"), &position,
-                             GTK_STOCK_DISCONNECT, FALSE);
+                             "trg-gtk-disconnect", FALSE);
     priv->tb_add =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Add"), &position,
-                             GTK_STOCK_ADD, FALSE);
+                             "list-add", FALSE);
 
     separator = gtk_separator_tool_item_new();
     gtk_toolbar_insert(GTK_TOOLBAR(obj), separator, position++);
 
     priv->tb_resume =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Resume"), &position,
-                             GTK_STOCK_MEDIA_PLAY, FALSE);
+                             "media-playback-start", FALSE);
     priv->tb_pause =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Pause"), &position,
-                             GTK_STOCK_MEDIA_PAUSE, FALSE);
+                             "media-playback-pause", FALSE);
 
     priv->tb_props =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Properties"), &position,
-                             GTK_STOCK_PROPERTIES, FALSE);
+                             "document-properties", FALSE);
 
     priv->tb_remove =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Remove"), &position,
-                             GTK_STOCK_REMOVE, FALSE);
+                             "list-remove", FALSE);
 
     priv->tb_delete =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Remove and delete data"),
-                             &position, GTK_STOCK_DELETE, FALSE);
+                             &position, "edit-delete", FALSE);
 
     separator = gtk_separator_tool_item_new();
     gtk_toolbar_insert(GTK_TOOLBAR(obj), separator, position++);
 
     priv->tb_local_prefs =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Local Preferences"),
-                             &position, GTK_STOCK_PREFERENCES, TRUE);
+                             &position, "preferences-system", TRUE);
 
     priv->tb_remote_prefs =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Remote Preferences"),
-                             &position, GTK_STOCK_NETWORK, FALSE);
+                             &position, "network-workgroup", FALSE);
 
     g_signal_connect(G_OBJECT(priv->prefs), "pref-profile-changed",
                      G_CALLBACK(trg_toolbar_refresh_menu), obj);

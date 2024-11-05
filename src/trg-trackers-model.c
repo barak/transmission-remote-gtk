@@ -17,14 +17,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
 
-#include "config.h"
 #include "torrent.h"
 #include "trg-client.h"
 #include "trg-model.h"
@@ -151,6 +148,7 @@ trg_trackers_model_update(TrgTrackersModel * model,
     }
 
     g_list_free(trackers);
+
     trg_model_remove_removed(GTK_LIST_STORE(model),
                              TRACKERCOL_UPDATESERIAL, updateSerial);
 }

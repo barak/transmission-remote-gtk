@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -272,8 +270,7 @@ void trg_prefs_set_connection(TrgPrefs * p, JsonObject * profile)
 {
     TrgPrefsPrivate *priv = p->priv;
 
-    if (priv->connectionObj)
-        json_object_unref(priv->connectionObj);
+    g_clear_pointer(&priv->connectionObj, json_object_unref);
 
     if (profile)
         json_object_ref(profile);
@@ -426,10 +423,10 @@ JsonArray *trg_prefs_get_profiles(TrgPrefs * p)
                                         TRG_PREFS_KEY_PROFILES);
 }
 
-JsonArray *trg_prefs_get_rss(TrgPrefs *p) {
-	TrgPrefsPrivate *priv = p->priv;
-	return json_object_get_array_member(priv->userObj,
-            TRG_PREFS_KEY_RSS);
+JsonArray *trg_prefs_get_rss(TrgPrefs *p)
+{
+    return trg_prefs_get_array(p, TRG_PREFS_KEY_RSS,
+                               TRG_PREFS_GLOBAL);
 }
 
 void
@@ -479,7 +476,24 @@ gboolean trg_prefs_save(TrgPrefs * p)
     g_object_set(G_OBJECT(gen), "pretty", TRUE, NULL);
     json_generator_set_root(gen, priv->user);
 
-    success = json_generator_to_file(gen, priv->file, NULL);
+    if(g_file_test(priv->file, G_FILE_TEST_IS_SYMLINK)) {
+	    gsize len;
+	    gchar *realFile;
+	    gchar *fileData;
+        gchar *linkPath = realFile = g_file_read_link(priv->file, NULL);
+        if (!g_path_is_absolute (linkPath)) {
+            dirName = g_path_get_dirname (priv->file);
+            realFile = g_build_filename (dirName, linkPath, NULL);
+            g_free(dirName);
+            g_free(linkPath);
+        }
+        fileData = json_generator_to_data (gen, &len);
+        success = g_file_set_contents(realFile, fileData, len, NULL);
+        g_free(realFile);
+        g_free(fileData);
+    } else {
+        success = json_generator_to_file(gen, priv->file, NULL);
+    }
 
     if (!success)
         g_error("Problem writing configuration file (permissions?) to: %s",
@@ -562,8 +576,9 @@ void trg_prefs_load(TrgPrefs * p)
         trg_prefs_set_int(p, TRG_PREFS_KEY_PROFILE_ID, 0,
                           TRG_PREFS_GLOBAL);
     } else {
-        gint profile_id = trg_prefs_get_int(p, TRG_PREFS_KEY_PROFILE_ID,
-                                            TRG_PREFS_GLOBAL);
+        // Note: profile IDs are strictly positive
+        guint profile_id = (guint) trg_prefs_get_int(p, TRG_PREFS_KEY_PROFILE_ID,
+                                                     TRG_PREFS_GLOBAL);
         if (profile_id >= n_profiles)
             trg_prefs_set_int(p, TRG_PREFS_KEY_PROFILE_ID, profile_id = 0,
                               TRG_PREFS_GLOBAL);

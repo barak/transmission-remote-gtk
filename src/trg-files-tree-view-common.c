@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <stdlib.h>
 
@@ -41,15 +39,36 @@ static void collapse_all_cb(GtkWidget * w, gpointer data)
     gtk_tree_view_collapse_all(GTK_TREE_VIEW(data));
 }
 
+static unsigned get_selected_rows_count(GtkTreeView * tv)
+{
+    GtkTreeSelection *selection = gtk_tree_view_get_selection(tv);
+    return gtk_tree_selection_count_selected_rows(selection);
+}
+
 static void
 view_popup_menu(GtkWidget * treeview, GdkEventButton * event,
-                GCallback low_cb, GCallback normal_cb,
-                GCallback high_cb, GCallback wanted_cb,
-                GCallback unwanted_cb, gpointer data G_GNUC_UNUSED)
+                GCallback rename_cb, GCallback low_cb,
+                GCallback normal_cb, GCallback high_cb,
+                GCallback wanted_cb, GCallback unwanted_cb,
+                gpointer data G_GNUC_UNUSED)
 {
     GtkWidget *menu, *menuitem;
 
     menu = gtk_menu_new();
+
+    if (rename_cb) {
+        menuitem = gtk_menu_item_new_with_label(_("Rename..."));
+        if (get_selected_rows_count(GTK_TREE_VIEW(treeview)) == 1) {
+            g_signal_connect(menuitem, "activate", rename_cb, treeview);
+        } else {
+            /* Rename on multiple files currently not supported */
+            gtk_widget_set_sensitive(menuitem, FALSE);
+        }
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu),
+                              gtk_separator_menu_item_new());
+    }
 
     menuitem = gtk_menu_item_new_with_label(_("High Priority"));
     g_signal_connect(menuitem, "activate", high_cb, treeview);
@@ -89,13 +108,12 @@ view_popup_menu(GtkWidget * treeview, GdkEventButton * event,
 
     gtk_widget_show_all(menu);
 
-    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-                   (event != NULL) ? event->button : 0,
-                   gdk_event_get_time((GdkEvent *) event));
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
 }
 
 gboolean
 trg_files_tree_view_viewOnPopupMenu(GtkWidget * treeview,
+                                    GCallback rename_cb,
                                     GCallback low_cb,
                                     GCallback normal_cb,
                                     GCallback high_cb,
@@ -103,7 +121,7 @@ trg_files_tree_view_viewOnPopupMenu(GtkWidget * treeview,
                                     GCallback unwanted_cb,
                                     gpointer userdata)
 {
-    view_popup_menu(treeview, NULL, low_cb, normal_cb, high_cb, wanted_cb,
+    view_popup_menu(treeview, NULL, rename_cb, low_cb, normal_cb, high_cb, wanted_cb,
                     unwanted_cb, userdata);
     return TRUE;
 }
@@ -183,6 +201,7 @@ trg_files_tree_view_onViewButtonPressed(GtkWidget * w,
                                         GdkEventButton * event,
                                         gint pri_id,
                                         gint enabled_id,
+                                        GCallback rename_cb,
                                         GCallback low_cb,
                                         GCallback normal_cb,
                                         GCallback high_cb,
@@ -213,7 +232,7 @@ trg_files_tree_view_onViewButtonPressed(GtkWidget * w,
                 gtk_tree_selection_select_path(selection, path);
             }
 
-            view_popup_menu(w, event, low_cb, normal_cb, high_cb,
+            view_popup_menu(w, event, rename_cb, low_cb, normal_cb, high_cb,
                             wanted_cb, unwanted_cb, gdata);
             handled = TRUE;
         }

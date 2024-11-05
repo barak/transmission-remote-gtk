@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -347,12 +345,13 @@ static void toggle_graph(GtkToggleButton * w, gpointer win)
 }
 #endif
 
+
 static void toggle_tray_icon(GtkToggleButton * w, gpointer win)
 {
     if (gtk_toggle_button_get_active(w))
-        trg_main_window_add_status_icon(TRG_MAIN_WINDOW(win));
+        trg_main_window_add_tray(TRG_MAIN_WINDOW(win));
     else
-        trg_main_window_remove_status_icon(TRG_MAIN_WINDOW(win));
+        trg_main_window_remove_tray(TRG_MAIN_WINDOW(win));
 }
 
 static void menu_bar_toggle_filter_dirs(GtkToggleButton * w, gpointer win)
@@ -596,7 +595,7 @@ static GtkWidget *trg_prefs_openExecPage(TrgPreferencesDialog * dlg)
 {
     TrgPreferencesDialogPrivate *priv =
         TRG_PREFERENCES_DIALOG_GET_PRIVATE(dlg);
-    GtkWidget *t;
+    GtkWidget *t, *l;
     TrgPersistentTreeView *ptv;
     GtkListStore *model;
     trg_pref_widget_desc *wd;
@@ -624,10 +623,19 @@ static GtkWidget *trg_prefs_openExecPage(TrgPreferencesDialog * dlg)
 
     hig_workarea_add_wide_tall_control(t, &row, GTK_WIDGET(ptv));
 
+    l = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(l),
+            _("Documentation for commands can be found "
+              "<a href=\"https://github.com/transmission-remote-gtk/"
+              "transmission-remote-gtk/wiki/Local-Command-usage\">"
+              "here</a>"));
+
+    hig_workarea_add_label_w(t, row, l);
+
     return t;
 }
 
-#ifdef HAVE_RSS
+#if HAVE_RSS
 static GtkWidget *trg_prefs_rss_page(TrgPreferencesDialog * dlg) {
     TrgPreferencesDialogPrivate *priv =
         TRG_PREFERENCES_DIALOG_GET_PRIVATE(dlg);
@@ -708,8 +716,6 @@ static GtkWidget *trg_prefs_viewPage(TrgPreferencesDialog * dlg)
 
     GtkWidget *w, *dep, *t, *tray;
     guint row = 0;
-    gboolean _is_unity = is_unity();
-    gchar *tray_label;
 
     t = hig_workarea_create();
 
@@ -758,31 +764,30 @@ static GtkWidget *trg_prefs_viewPage(TrgPreferencesDialog * dlg)
     hig_workarea_add_wide_control(t, &row, w);
 #endif
 
-	hig_workarea_add_section_title(t, &row, _("System Tray"));
 
-	if (_is_unity) {
-		tray_label = _("Show in system tray (needs whitelisting in unity)");
-	} else {
-		tray_label = _("Show in system tray");
-	}
+    hig_workarea_add_section_title(t, &row, _("System Tray"));
 
-	tray = trgp_check_new(dlg, tray_label,
-	TRG_PREFS_KEY_SYSTEM_TRAY, TRG_PREFS_GLOBAL,
-	NULL);
-	g_signal_connect(G_OBJECT(tray), "toggled", G_CALLBACK(toggle_tray_icon),
-			priv->win);
-	hig_workarea_add_wide_control(t, &row, tray);
+    tray = trgp_check_new(dlg, _("Show in system tray"),
+    TRG_PREFS_KEY_SYSTEM_TRAY, TRG_PREFS_GLOBAL, NULL);
+    g_signal_connect(G_OBJECT(tray), "toggled", G_CALLBACK(toggle_tray_icon),
+                     priv->win);
 
-	w = trgp_check_new(dlg, _("Minimise to system tray"),
-	TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE,
-	TRG_PREFS_GLOBAL, NULL);
-	gtk_widget_set_sensitive(w,
-			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(tray)));
-	g_signal_connect(G_OBJECT(tray), "toggled",
-			G_CALLBACK(toggle_active_arg_is_sensitive), w);
-	hig_workarea_add_wide_control(t, &row, w);
+    if (!HAVE_LIBAPPINDICATOR) {
+        gtk_widget_set_sensitive(tray, FALSE);
+        gtk_widget_set_tooltip_text(tray, _("System tray not supported."));
+    }
 
-#ifdef HAVE_LIBNOTIFY
+    hig_workarea_add_wide_control(t, &row, tray);
+
+    w = trgp_check_new(dlg, _("Minimise to system tray"),
+    TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE,
+    TRG_PREFS_GLOBAL, NULL);
+    gtk_widget_set_sensitive(w, gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(tray)));
+    g_signal_connect(G_OBJECT(tray), "toggled",
+                     G_CALLBACK(toggle_active_arg_is_sensitive), w);
+    hig_workarea_add_wide_control(t, &row, w);
+
+
     hig_workarea_add_section_title(t, &row, _("Notifications"));
 
     w = trgp_check_new(dlg, _("Torrent added notifications"),
@@ -793,7 +798,6 @@ static GtkWidget *trg_prefs_viewPage(TrgPreferencesDialog * dlg)
                        TRG_PREFS_KEY_COMPLETE_NOTIFY, TRG_PREFS_GLOBAL,
                        NULL);
     hig_workarea_add_wide_control(t, &row, w);
-#endif
 
     return t;
 }
@@ -806,6 +810,9 @@ static GtkWidget *trg_prefs_serverPage(TrgPreferencesDialog * dlg)
 
     GtkWidget *w, *t, *frame, *frameHbox, *profileLabel;
     GtkWidget *profileButtonsHbox;
+    GtkListStore *model;
+    TrgPersistentTreeView *ptv;
+    trg_pref_widget_desc *wd;
     guint row = 0;
 
     t = hig_workarea_create();
@@ -819,12 +826,12 @@ static GtkWidget *trg_prefs_serverPage(TrgPreferencesDialog * dlg)
     profileLabel = gtk_label_new(_("Profile: "));
 
     profileButtonsHbox = trg_hbox_new(FALSE, 0);
-    w = gtk_button_new_from_stock(GTK_STOCK_NEW);
+    w = gtk_button_new_with_label(_("New"));
     g_signal_connect(w, "clicked", G_CALLBACK(add_profile_cb),
                      priv->profileComboBox);
     gtk_box_pack_start(GTK_BOX(profileButtonsHbox), w, FALSE, FALSE, 4);
 
-    priv->profileDelButton = gtk_button_new_from_stock(GTK_STOCK_DELETE);
+    priv->profileDelButton = gtk_button_new_with_label(_("Delete"));
     g_signal_connect(priv->profileDelButton, "clicked",
                      G_CALLBACK(del_profile_cb), priv->profileComboBox);
     gtk_widget_set_sensitive(priv->profileDelButton, FALSE);
@@ -888,6 +895,22 @@ static GtkWidget *trg_prefs_serverPage(TrgPreferencesDialog * dlg)
                       TRG_PREFS_PROFILE, NULL);
     hig_workarea_add_row(t, &row, _("Retries:"), w, NULL);
 
+    hig_workarea_add_section_title(t, &row, _("Headers"));
+
+    model = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+    ptv = trg_persistent_tree_view_new(
+        priv->prefs, model, TRG_PREFS_KEY_CUSTOM_HEADERS, TRG_PREFS_PROFILE);
+    trg_persistent_tree_view_set_add_select(ptv,
+                                             trg_persistent_tree_view_add_column (ptv, 0, TRG_PREFS_KEY_CUSTOM_HEADER_NAME,
+                                                                                  _("Name")));
+    trg_persistent_tree_view_add_column (ptv, 1,
+                                         TRG_PREFS_KEY_CUSTOM_HEADER_VALUE,
+                                         _("Value"));
+    wd = trg_persistent_tree_view_get_widget_desc(ptv);
+    trg_pref_widget_refresh(dlg, wd);
+    priv->widgets = g_list_append(priv->widgets, wd);
+    hig_workarea_add_wide_tall_control(t, &row, GTK_WIDGET(ptv));
+
     frame = gtk_frame_new(NULL);
     frameHbox = trg_hbox_new(FALSE, 2);
     gtk_box_pack_start(GTK_BOX(frameHbox), profileLabel, FALSE, FALSE, 2);
@@ -921,9 +944,9 @@ static GObject *trg_preferences_dialog_constructor(GType type,
     gtk_window_set_transient_for(GTK_WINDOW(object),
                                  GTK_WINDOW(priv->win));
     gtk_window_set_destroy_with_parent(GTK_WINDOW(object), TRUE);
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_CLOSE,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_Close"),
                           GTK_RESPONSE_CLOSE);
-    gtk_dialog_add_button(GTK_DIALOG(object), GTK_STOCK_OK,
+    gtk_dialog_add_button(GTK_DIALOG(object), _("_OK"),
                           GTK_RESPONSE_OK);
 
     gtk_dialog_set_default_response(GTK_DIALOG(object), GTK_RESPONSE_OK);
@@ -961,7 +984,7 @@ static GObject *trg_preferences_dialog_constructor(GType type,
                                                 (object)),
                              gtk_label_new(_("Directories")));
 
-#ifdef HAVE_RSS
+#if HAVE_RSS
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
                              trg_prefs_rss_page(TRG_PREFERENCES_DIALOG
                                                 (object)),

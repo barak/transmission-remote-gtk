@@ -22,9 +22,7 @@
  * and JSON dispatch.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -234,6 +232,7 @@ onViewButtonPressed(GtkWidget * w, GdkEventButton * event, gpointer gdata)
 {
     return trg_files_tree_view_onViewButtonPressed(w, event, FC_PRIORITY,
                                                    FC_ENABLED,
+                                                   NULL, /* no rename */
                                                    G_CALLBACK(set_low),
                                                    G_CALLBACK(set_normal),
                                                    G_CALLBACK(set_high),
@@ -562,9 +561,9 @@ static GtkWidget *trg_torrent_add_dialog_generic(GtkWindow * parent,
 {
     GtkWidget *w = gtk_file_chooser_dialog_new(_("Add a Torrent"), parent,
                                                GTK_FILE_CHOOSER_ACTION_OPEN,
-                                               GTK_STOCK_CANCEL,
+                                               _("_Cancel"),
                                                GTK_RESPONSE_CANCEL,
-                                               GTK_STOCK_ADD,
+                                               _("_Add"),
                                                GTK_RESPONSE_ACCEPT, NULL);
     gchar *dir =
         trg_prefs_get_string(prefs, TRG_PREFS_KEY_LAST_TORRENT_DIR,
@@ -575,9 +574,6 @@ static GtkWidget *trg_torrent_add_dialog_generic(GtkWindow * parent,
     }
 
     addTorrentFilters(GTK_FILE_CHOOSER(w));
-    gtk_dialog_set_alternative_button_order(GTK_DIALOG(w),
-                                            GTK_RESPONSE_ACCEPT,
-                                            GTK_RESPONSE_CANCEL, -1);
     gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(w), TRUE);
     return w;
 }
@@ -646,36 +642,28 @@ static GtkWidget
                                                  dialog)
 {
     GtkListStore *model =
-        gtk_list_store_new(4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT,
-                           G_TYPE_INT);
+        gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_INT);
     GtkWidget *combo = gtk_combo_box_new();
     GtkTreeIter iter;
     GtkCellRenderer *renderer;
 
     gtk_list_store_append(model, &iter);
-    gtk_list_store_set(model, &iter, 1, _("High Priority"), 2, FC_PRIORITY,
-                       3, TR_PRI_HIGH, -1);
+    gtk_list_store_set(model, &iter, 0, _("High Priority"), 1, FC_PRIORITY,
+                       2, TR_PRI_HIGH, -1);
     gtk_list_store_append(model, &iter);
-    gtk_list_store_set(model, &iter, 1, _("Normal Priority"), 2,
-                       FC_PRIORITY, 3, TR_PRI_NORMAL, -1);
+    gtk_list_store_set(model, &iter, 0, _("Normal Priority"), 1, FC_PRIORITY,
+                       2, TR_PRI_NORMAL, -1);
     gtk_list_store_append(model, &iter);
-    gtk_list_store_set(model, &iter, 1, _("Low Priority"), 2, FC_PRIORITY,
-                       3, TR_PRI_LOW, -1);
+    gtk_list_store_set(model, &iter, 0, _("Low Priority"), 1, FC_PRIORITY,
+                       2, TR_PRI_LOW, -1);
     gtk_list_store_append(model, &iter);
-    gtk_list_store_set(model, &iter, 0, GTK_STOCK_APPLY, 1, _("Download"),
-                       2, FC_ENABLED, 3, TRUE, -1);
+    gtk_list_store_set(model, &iter, 0, _("Download"), 1, FC_ENABLED, 2, TRUE, -1);
     gtk_list_store_append(model, &iter);
-    gtk_list_store_set(model, &iter, 0, GTK_STOCK_CANCEL, 1, _("Skip"), 2,
-                       FC_ENABLED, 3, FALSE, -1);
+    gtk_list_store_set(model, &iter, 0, _("Skip"), 1, FC_ENABLED, 2, FALSE, -1);
 
-    renderer = gtk_cell_renderer_pixbuf_new();
-    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
-    gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(combo), renderer,
-                                  "stock-id", 0);
     renderer = gtk_cell_renderer_text_new();
     gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
-    gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(combo), renderer, "text",
-                                  1);
+    gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(combo), renderer, "text", 0);
 
     gtk_combo_box_set_model(GTK_COMBO_BOX(combo), GTK_TREE_MODEL(model));
     g_signal_connect(combo, "changed",
@@ -710,14 +698,13 @@ static GObject *trg_torrent_add_dialog_constructor(GType type,
     gtk_window_set_destroy_with_parent(GTK_WINDOW(obj), TRUE);
 
     /* buttons */
-    gtk_dialog_add_button(GTK_DIALOG(obj), GTK_STOCK_CANCEL,
+    gtk_dialog_add_button(GTK_DIALOG(obj), _("_Cancel"),
                           GTK_RESPONSE_CANCEL);
-    gtk_dialog_add_button(GTK_DIALOG(obj), GTK_STOCK_OPEN,
+    gtk_dialog_add_button(GTK_DIALOG(obj), _("_Open"),
                           GTK_RESPONSE_ACCEPT);
-    gtk_dialog_set_alternative_button_order(GTK_DIALOG(obj),
-                                            GTK_RESPONSE_ACCEPT,
-                                            GTK_RESPONSE_CANCEL, -1);
     gtk_dialog_set_default_response(GTK_DIALOG(obj), GTK_RESPONSE_ACCEPT);
+    gtk_widget_grab_focus(gtk_dialog_get_widget_for_response (GTK_DIALOG(obj),
+							      GTK_RESPONSE_ACCEPT));
 
     /* workspace */
     t = hig_workarea_create();
@@ -745,9 +732,7 @@ static GObject *trg_torrent_add_dialog_constructor(GType type,
 
     priv->source_chooser = gtk_button_new();
     hig_workarea_add_row(t, &row, _("_Torrent file:"), priv->source_chooser, NULL);
-
-    gtk_button_set_alignment(GTK_BUTTON(priv->source_chooser), 0.0f, 0.5f);
-
+ 
     if (priv->filenames)
 		trg_torrent_add_dialog_set_filenames(TRG_TORRENT_ADD_DIALOG(obj),
 											 priv->filenames);

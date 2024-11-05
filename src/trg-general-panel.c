@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <string.h>
 #include <glib-object.h>
@@ -33,12 +31,9 @@
 #include "trg-torrent-model.h"
 #include "protocol-constants.h"
 
-#define TRG_GENERAL_PANEL_WIDTH_FROM_KEY    20
-#define TRG_GENERAL_PANEL_WIDTH_FROM_VALUE  60
 #define TRG_GENERAL_PANEL_SPACING_X         4
 #define TRG_GENERAL_PANEL_SPACING_Y         2
-#define TRG_GENERAL_PANEL_COLUMNS           3
-#define TRG_GENERAL_PANEL_COLUMNS_TOTAL     (TRG_GENERAL_PANEL_COLUMNS*2)
+#define TRG_GENERAL_PANEL_COLUMNS           6
 
 static void gtk_label_clear(GtkLabel * l);
 static GtkLabel *gen_panel_label_get_key_label(GtkLabel * l);
@@ -46,7 +41,7 @@ static GtkLabel *trg_general_panel_add_label(TrgGeneralPanel * gp,
                                              char *key, guint col,
                                              guint row);
 
-G_DEFINE_TYPE(TrgGeneralPanel, trg_general_panel, GTK_TYPE_TABLE)
+G_DEFINE_TYPE(TrgGeneralPanel, trg_general_panel, GTK_TYPE_GRID)
 #define TRG_GENERAL_PANEL_GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), TRG_TYPE_GENERAL_PANEL, TrgGeneralPanelPrivate))
 typedef struct _TrgGeneralPanelPrivate TrgGeneralPanelPrivate;
@@ -70,6 +65,7 @@ struct _TrgGeneralPanelPrivate {
     GtkLabel *gen_completedat_label;
     GtkLabel *gen_downloaddir_label;
     GtkLabel *gen_comment_label;
+    GtkLabel *gen_hash_label;
     GtkLabel *gen_error_label;
     GtkTreeModel *model;
     TrgClient *tc;
@@ -97,6 +93,7 @@ void trg_general_panel_clear(TrgGeneralPanel * panel)
     gtk_label_clear(priv->gen_completedat_label);
     gtk_label_clear(priv->gen_downloaddir_label);
     gtk_label_clear(priv->gen_comment_label);
+    gtk_label_clear(priv->gen_hash_label);
     gtk_label_clear(priv->gen_error_label);
     gtk_label_clear(gen_panel_label_get_key_label
                     (GTK_LABEL(priv->gen_error_label)));
@@ -164,6 +161,8 @@ trg_general_panel_update(TrgGeneralPanel * panel, JsonObject * t,
     uploaded = torrent_get_uploaded(t);
     trg_strlsize(buf, uploaded);
     gtk_label_set_text(GTK_LABEL(priv->gen_uploaded_label), buf);
+
+    gtk_label_set_text(GTK_LABEL(priv->gen_hash_label), torrent_get_hash(t));
 
     haveValid = torrent_get_have_valid(t);
     trg_strlsize(buf, torrent_get_downloaded(t));
@@ -264,12 +263,18 @@ static GtkLabel *trg_general_panel_add_label_with_width(TrgGeneralPanel *
                                                         guint row,
                                                         gint width)
 {
-    GtkWidget *value, *keyLabel, *alignment;
+    GtkWidget *value, *keyLabel;
 
-    int startCol = col * 2;
+    guint startCol = col * 2;
+    guint endCol = (guint)(width < 0
+                           ? (TRG_GENERAL_PANEL_COLUMNS)
+                           : width);
 
-    alignment = gtk_alignment_new(0, 0, 0, 0);
     keyLabel = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(keyLabel), 0.0f);
+    gtk_label_set_yalign(GTK_LABEL(keyLabel), 0.0f);
+    gtk_label_set_width_chars(GTK_LABEL(keyLabel), 10);
+
     if (strlen(key) > 0) {
         gchar *keyMarkup =
             g_markup_printf_escaped(strlen(key) > 0 ? "<b>%s:</b>" : "",
@@ -277,22 +282,20 @@ static GtkLabel *trg_general_panel_add_label_with_width(TrgGeneralPanel *
         gtk_label_set_markup(GTK_LABEL(keyLabel), keyMarkup);
         g_free(keyMarkup);
     }
-    gtk_container_add(GTK_CONTAINER(alignment), keyLabel);
-    gtk_table_attach(GTK_TABLE(gp), alignment, startCol, startCol + 1, row,
-                     row + 1, GTK_FILL, 0, TRG_GENERAL_PANEL_SPACING_X,
-                     TRG_GENERAL_PANEL_SPACING_Y);
+    gtk_grid_attach(GTK_GRID(gp), keyLabel,
+                    startCol, row,
+                    1, 1);
 
-    alignment = gtk_alignment_new(0, 0, 0, 0);
     value = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(value), 0.0f);
+    gtk_label_set_yalign(GTK_LABEL(value), 0.0f);
+    gtk_label_set_width_chars(GTK_LABEL(value), 10);
+
     g_object_set_data(G_OBJECT(value), "key-label", keyLabel);
     gtk_label_set_selectable(GTK_LABEL(value), TRUE);
-    gtk_container_add(GTK_CONTAINER(alignment), value);
-    gtk_table_attach(GTK_TABLE(gp), alignment, startCol + 1,
-                     width <
-                     0 ? TRG_GENERAL_PANEL_COLUMNS_TOTAL - 1 : startCol +
-                     1 + width, row, row + 1, GTK_FILL | GTK_SHRINK, 0,
-                     TRG_GENERAL_PANEL_SPACING_X,
-                     TRG_GENERAL_PANEL_SPACING_Y);
+    gtk_grid_attach(GTK_GRID(gp), value,
+                    startCol + 1, row,
+                    endCol, 1);
 
     return GTK_LABEL(value);
 }
@@ -307,11 +310,6 @@ static GtkLabel *trg_general_panel_add_label(TrgGeneralPanel * gp,
 static void trg_general_panel_init(TrgGeneralPanel * self)
 {
     TrgGeneralPanelPrivate *priv = TRG_GENERAL_PANEL_GET_PRIVATE(self);
-    int i;
-
-    g_object_set(G_OBJECT(self), "n-columns",
-                 TRG_GENERAL_PANEL_COLUMNS_TOTAL, "n-rows", 7, NULL);
-
 	priv->gen_name_label =
 		trg_general_panel_add_label_with_width(self, _("Name"), 0, 0, -1);
 
@@ -356,15 +354,15 @@ static void trg_general_panel_init(TrgGeneralPanel * self)
 	priv->gen_comment_label =
 		trg_general_panel_add_label(self, _("Comment"), 0, 7);
 
+	priv->gen_hash_label =
+		trg_general_panel_add_label(self, _("Hash"), 0, 8);
+
 	priv->gen_error_label =
-		trg_general_panel_add_label_with_width(self, "", 0, 8, -1);
+		trg_general_panel_add_label_with_width(self, "", 0, 9, -1);
 
-    for (i = 0; i < TRG_GENERAL_PANEL_COLUMNS_TOTAL; i++)
-        gtk_table_set_col_spacing(GTK_TABLE(self), i,
-                                  i % 2 ==
-                                  0 ? TRG_GENERAL_PANEL_WIDTH_FROM_KEY :
-                                  TRG_GENERAL_PANEL_WIDTH_FROM_VALUE);
-
+    gtk_grid_set_row_homogeneous(GTK_GRID(self), TRUE);
+    gtk_grid_set_column_spacing(GTK_GRID(self), TRG_GENERAL_PANEL_SPACING_X);
+    gtk_grid_set_row_spacing(GTK_GRID(self), TRG_GENERAL_PANEL_SPACING_Y);
     gtk_widget_set_sensitive(GTK_WIDGET(self), FALSE);
 }
 

@@ -17,9 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <string.h>
 #include <limits.h>
@@ -78,6 +76,30 @@ static void trg_files_update_parent_progress(GtkTreeModel * model,
                            FILESCOL_PROGRESS, file_get_progress(length,
                                                                 newCompleted),
                            FILESCOL_BYTESCOMPLETED, newCompleted, -1);
+
+        back_iter = tmp_iter;
+    }
+}
+
+/* Update names for all nodes parents, i.e. folders
+ */
+static void trg_files_update_parent_names(GtkTreeModel *model,
+                                          GtkTreeIter *iter,
+                                          gchar **path_last)
+{
+    GtkTreeIter back_iter = *iter;
+
+    while (1) {
+        GtkTreeIter tmp_iter;
+
+        if (!gtk_tree_model_iter_parent(model, &tmp_iter, &back_iter))
+            break;
+
+        --path_last;
+
+        /* Is it better to test if name has changed before calling store_set? */
+        gtk_tree_store_set(GTK_TREE_STORE(model), &tmp_iter,
+                           FILESCOL_NAME, *path_last, -1);
 
         back_iter = tmp_iter;
     }
@@ -249,6 +271,12 @@ trg_files_model_iter_update(TrgFilesModel * model,
                             JsonArray * prioritiesArray, gint id)
 {
     TrgFilesModelPrivate *priv = TRG_FILES_MODEL_GET_PRIVATE(model);
+    gchar **path = g_strsplit(file_get_name(file), "/", -1);
+
+    /* Find last element in the path */
+    gchar **path_last;
+    for (path_last = path; path_last[1]; ++path_last);
+
     gint64 fileLength = file_get_length(file);
     gint64 fileCompleted = file_get_bytes_completed(file);
     gint64 lastCompleted;
@@ -267,10 +295,17 @@ trg_files_model_iter_update(TrgFilesModel * model,
     trg_files_update_parent_progress(GTK_TREE_MODEL(model), filesIter,
                                      fileCompleted - lastCompleted);
 
-    if (priv->accept)
+    if (priv->accept) {
         gtk_tree_store_set(GTK_TREE_STORE(model), filesIter,
+                           FILESCOL_NAME, *path_last,
                            FILESCOL_WANTED, wanted, FILESCOL_PRIORITY,
                            priority, -1);
+
+        trg_files_update_parent_names(GTK_TREE_MODEL(model), filesIter,
+                                      path_last);
+    }
+
+    g_strfreev(path);
 }
 
 static void trg_files_model_class_init(TrgFilesModelClass * klass)
@@ -423,8 +458,7 @@ trg_files_model_update(TrgFilesModel * model, GtkTreeView * tv,
          * for. Just do it in the main loop.
          */
         if (futd->idle_add) {
-            g_thread_create(trg_files_model_buildtree_threadfunc, futd,
-                            FALSE, NULL);
+            g_thread_new(NULL, trg_files_model_buildtree_threadfunc, futd);
         } else {
             trg_files_model_buildtree_threadfunc(futd);
             trg_files_model_applytree_idlefunc(futd);
