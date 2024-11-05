@@ -19,16 +19,13 @@
 
 #include "config.h"
 
-#include <curl/curl.h>
-#include <curl/easy.h>
-
-#include <glib/gi18n.h>
 #include <glib-object.h>
+#include <glib/gi18n.h>
 #include <gtk/gtk.h>
 
+#include "trg-client.h"
 #include "trg-gtk-app.h"
 #include "trg-main-window.h"
-#include "trg-client.h"
 
 /* Handle arguments and start the main window. */
 
@@ -36,11 +33,9 @@
 static void bindtext_wrapper(void)
 {
 #ifdef G_OS_WIN32
-    gchar *moddir =
-        g_win32_get_package_installation_directory_of_module(NULL);
+    gchar *moddir = g_win32_get_package_installation_directory_of_module(NULL);
 
-    gchar *localedir = g_build_path(G_DIR_SEPARATOR_S,
-                                    moddir, "share", "locale", NULL);
+    gchar *localedir = g_build_path(G_DIR_SEPARATOR_S, moddir, "share", "locale", NULL);
 
     bindtextdomain(GETTEXT_PACKAGE, localedir);
     g_free(moddir);
@@ -56,7 +51,6 @@ int main(int argc, char *argv[])
     TrgGtkApp *gtk_app;
 
     gtk_init(&argc, &argv);
-    curl_global_init(CURL_GLOBAL_ALL);
 
     g_set_application_name(PACKAGE_NAME);
     bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
@@ -69,7 +63,6 @@ int main(int argc, char *argv[])
 
     g_object_unref(gtk_app);
     g_object_unref(client);
-    curl_global_cleanup();
 
     return exitCode;
 }

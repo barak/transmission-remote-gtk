@@ -13,23 +13,21 @@ transmission-remote-gtk:
  - gtk >= 3.22
  - glib >= 2.56 (including gio and gthread)
  - json-glib >= 1.2.8
- - libcurl
+ - libsoup >= 3.0
  - GNU gettext
 
 An example command for getting the packages required for an Ubuntu/Debian
 system:
 
 ```
-# apt install libgtk-3-dev libgeoip-dev gettext libcurl4-openssl-dev libjson-glib-dev
+# apt install libgtk-3-dev libgeoip-dev gettext libsoup-3.0-dev libjson-glib-dev
 ```
 
 ### Optional Dependencies
 The following packages are optional dependencies:
 
- - libmrss >= 0.18, RSS feed support
- - libproxy, HTTP proxy support
  - libgeoip, country of origin of peers
- - libappindicator, Application tray support
+ - libappindicator or libayatana-appindicator3, Application tray support
 
 If these libraries are installed at build time they will be automatically
 detected and linked for additional functionality.
@@ -54,7 +52,7 @@ meson that will not work for compiling transmission-remote-gtk. Meson can also
 be installed via pip:
 
 ```
-# apt-get install python3-pip
+# apt install python3-pip
 $ pip install meson
 ```
 
@@ -67,13 +65,22 @@ the repository, build transmission-remote-gtk, and install it on your system:
 ```
 $ git clone https://github.com/transmission-remote-gtk/transmission-remote-gtk.git
 $ cd transmission-remote-gtk
-$ meson --prefix="$prefix" "$builddir"
+$ meson setup --prefix="$prefix" "$builddir"
 $ meson compile -C "$builddir"
 # meson install -C "$builddir"
 ```
 
 [Tarball releases](https://github.com/transmission-remote-gtk/transmission-remote-gtk/releases)
 are also available to download.
+
+
+# INSTALLING
+
+Installing transmisison-remote-gtk can be done in a few ways besides building from source. There are many distributions that package transmission-remote-gtk for example. However, there is a cross-distribution Flatpak available that is always up to date.
+
+<a href='https://flathub.org/apps/details/io.github.TransmissionRemoteGtk'><img width='240' alt='Download on Flathub' src='https://flathub.org/assets/badges/flathub-badge-en.png'/></a>
+
+**NOTE**: Only the **latest release** is supported for issues; if your installed version is older you should try the Flatpak or report bugs to your distribution.
 
 ## LICENSE
 

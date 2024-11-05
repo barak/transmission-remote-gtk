@@ -1,7 +1,7 @@
 project('transmission-remote-gtk', 'c',
         license: 'GPL2+',
-        version: '1.5.1',
-        meson_version: '>= 0.59.0',
+        version: '1.6.0',
+        meson_version: '>= 0.60.0',
         default_options: ['b_pie=true',
                           'c_std=gnu99',
                           'warning_level=2',
@@ -18,9 +18,10 @@ i18n = import('i18n')
 
 
 # glib version info
-glib_version = '2.56'
+glib_version = '2.70'
 glib_max_version = glib_version
-glib_min_version = glib_version
+# While we actually depend on 2.70 because of libsoup3 we have some deprecated usage that we'll deal with later so this silences it for now.
+glib_min_version = '2.56'
 glib_version_str = '>= @0@'.format(glib_version)
 
 # glib API configuration
@@ -39,18 +40,16 @@ gtk_dep     = dependency('gtk+-3.0', version: '>= 3.22')
 gio_dep     = dependency('gio-2.0', version: glib_version_str)
 glib_dep    = dependency('glib-2.0', version: glib_version_str)
 json_dep    = dependency('json-glib-1.0', version: '>= 1.2.8')
-libcurl_dep = dependency('libcurl')
+libsoup_dep = dependency('libsoup-3.0', version: '>= 3.0')
 gthread_dep = dependency('gthread-2.0', version: glib_version_str)
 
-trg_deps = [gtk_dep, glib_dep, gio_dep, json_dep, libcurl_dep, gthread_dep]
+trg_deps = [gtk_dep, glib_dep, gio_dep, json_dep, libsoup_dep, gthread_dep]
 
 # optional dependencies
-rss_dep             = dependency('mrss', version: '>=0.18', required: get_option('mrss'))
 geoip_dep           = dependency('geoip', required: get_option('geoip'))
-libproxy_dep        = dependency('libproxy-1.0', required: get_option('libproxy'))
-libappindicator_dep = dependency('appindicator3-0.1', required: get_option('libappindicator'))
+libappindicator_dep = dependency('ayatana-appindicator3-0.1', 'appindicator3-0.1', required: get_option('libappindicator'))
 
-trg_deps += [geoip_dep, libproxy_dep, libappindicator_dep]
+trg_deps += [geoip_dep, libappindicator_dep]
 
 # compiler
 cc = meson.get_compiler('c')
@@ -74,7 +73,7 @@ conf_data.set_quoted('PACKAGE_NAME', project_name)
 conf_data.set_quoted('PACKAGE_VERSION', project_version)
 conf_data.set_quoted('GETTEXT_PACKAGE', project_name)
 conf_data.set_quoted('APPLICATION_ID', app_id)
-conf_data.set_quoted('LOCALEDIR', get_option('localedir'))
+conf_data.set_quoted('LOCALEDIR', get_option('prefix') / get_option('localedir'))
 
 # debug options
 debug = get_option('debug')
@@ -85,18 +84,18 @@ conf_data.set('G_DISABLE_CHECKS', not debug)
 conf_data.set('G_DISABLE_CAST_CHECKS', not debug)
 
 # compile time features
-conf_data.set10('HAVE_RSS', rss_dep.found())
 conf_data.set10('HAVE_GEOIP', geoip_dep.found())
-conf_data.set10('HAVE_LIBPROXY', libproxy_dep.found())
 conf_data.set10('ENABLE_NL_LANGINFO', nl_langinfo)
+
 conf_data.set10('HAVE_LIBAPPINDICATOR', libappindicator_dep.found())
+conf_data.set10('HAVE_LIBAYATANA_APPINDICATOR', libappindicator_dep.found() and libappindicator_dep.name() == 'ayatana-appindicator3-0.1')
 
 # compiler/linker flags
 flags = ['-funsigned-char',
          '-fstack-protector-strong',
          '-Winline',
-         '-Wno-padded',
          '-Wno-unused-parameter',
+         '-Wno-typedef-redefinition',
          '-Wstrict-prototypes',
          '-Wmissing-prototypes',
          '-Werror=format=2',
@@ -105,8 +104,6 @@ flags = ['-funsigned-char',
          '-Werror=init-self',
          '-Werror=missing-include-dirs',
          '-Werror=date-time',
-         '-Wno-conversion',
-         '-Wsign-compare',
          '-Wdeprecated-declarations',
          '-Wdeprecated']
 
@@ -135,7 +132,4 @@ endif
 
 subdir('po')
 subdir('data')
-if rss_dep.found()
-  subdir('extern/rss-glib')
-endif
 subdir('src')
