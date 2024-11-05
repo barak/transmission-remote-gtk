@@ -24,7 +24,7 @@ index b7564d6..e814003 100644
  If these libraries are installed at build time they will be automatically
  detected and linked for additional functionality.
 diff --git a/meson.build b/meson.build
-index 2acac20..88b3a81 100644
+index c51e553..61c23df 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -49,8 +49,9 @@ rss_dep             = dependency('mrss', version: '>=0.18', required: get_option
@@ -38,7 +38,7 @@ index 2acac20..88b3a81 100644
  
  # compiler
  cc = meson.get_compiler('c')
-@@ -90,6 +91,7 @@ conf_data.set10('HAVE_GEOIP', geoip_dep.found())
+@@ -89,6 +90,7 @@ conf_data.set10('HAVE_GEOIP', geoip_dep.found())
  conf_data.set10('HAVE_LIBPROXY', libproxy_dep.found())
  conf_data.set10('ENABLE_NL_LANGINFO', nl_langinfo)
  conf_data.set10('HAVE_LIBAPPINDICATOR', libappindicator_dep.found())

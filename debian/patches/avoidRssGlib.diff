@@ -1,3 +1,5 @@
+From: Benjamin Barenblat <bbaren@debian.org>
+Date: Sun, 23 Oct 2016 13:14:58 -0400
 Subject: Don't touch rss-glib if RSS is disabled
 
 rss-glib is licensed under the LGPLv3 or later.  src/hig.c, src/hig.h,
@@ -12,9 +14,15 @@ time by not building code which will never get linked.
 
 Author: Benjamin Barenblat <bbaren@mit.edu>
 Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/21
+---
+ meson.build | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 2acac20..c51e553 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -85,7 +84,6 @@
+@@ -85,7 +85,6 @@ conf_data.set('G_DISABLE_CHECKS', not debug)
  conf_data.set('G_DISABLE_CAST_CHECKS', not debug)
  
  # compile time features
@@ -22,7 +30,7 @@ Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/2
  conf_data.set10('HAVE_GEOIP', geoip_dep.found())
  conf_data.set10('HAVE_LIBPROXY', libproxy_dep.found())
  conf_data.set10('ENABLE_NL_LANGINFO', nl_langinfo)
-@@ -135,7 +133,4 @@
+@@ -135,7 +134,4 @@ endif
  
  subdir('po')
  subdir('data')
