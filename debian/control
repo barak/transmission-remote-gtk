@@ -16,6 +16,7 @@ Build-Depends:
  libnotify-dev,
  libayatana-appindicator3-dev,
  libproxy-dev,
+ meson (>= 0.59.0),
  perl,
 Standards-Version: 4.6.0
 Rules-Requires-Root: no

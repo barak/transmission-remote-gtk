@@ -5,4 +5,4 @@
 
 .PHONY: override_dh_auto_configure
 override_dh_auto_configure:
-	dh_auto_configure -- -Dmrss=disabled -Dlibappindicator=disabled -Dlibayatana-appindicator=enabled
+	dh_auto_configure -- -Dlibappindicator=disabled -Dmrss=disabled -Dlibayatana-appindicator=enabled

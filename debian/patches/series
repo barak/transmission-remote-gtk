@@ -1,1 +1,3 @@
+avoidRssGlib.diff
+disable-test-networking.diff
 0001-libayatana-appindicator.patch

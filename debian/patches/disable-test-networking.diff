@@ -1,0 +1,14 @@
+From: Benjamin Barenblat <bbaren@debian.org>
+Subject: Prevent tests from attempting network access
+Forwarded: not-needed
+
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -37,6 +37,6 @@
+ 
+ appstream_util = find_program('appstream-util', required: false)
+ if appstream_util.found()
+-  test('Validate appdata.xml', appstream_util, args: ['validate-relax', appdata_file])
++  test('Validate appdata.xml', appstream_util, args: ['--nonet', 'validate-relax', appdata_file])
+ endif
+ 

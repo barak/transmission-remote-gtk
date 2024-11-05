@@ -30,12 +30,8 @@ Copyright: 2014 Alan F
 License: CC0-1.0
 
 Files: debian/*
-Copyright: 2013-2018 Benjamin Barenblat <bbaren@debian.org>
+Copyright: 2013-2018, 2022 Benjamin Barenblat <bbaren@debian.org>
 License: Apache-2.0
-
-Files: debian/patches/fno-common.diff
-Copyright: 2020 David Seifert <soap@gentoo.org>
-License: GPL-2+
 
 Files: extern/rss-glib/*.c extern/rss-glib/*.h
 Copyright: 2008 Christian Hergert <chris@dronelabs.com>
@@ -85,8 +81,8 @@ License: CC0-1.0
  You should have received a copy of the CC0 Public Domain Dedication along with
  this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  .
- On Debian systems, the full text of the CC0 1.0 Universal license can be found
- in the file `/usr/share/common-licenses/CC0-1.0'.
+ On Debian systems, the complete text of the CC0 Public Domain Dedication can be
+ found in "/usr/share/common-licenses/CC0-1.0".
 
 License: GPL-2
  This program is free software; you can redistribute it and/or modify it under
