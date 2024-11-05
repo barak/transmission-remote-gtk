@@ -33,10 +33,6 @@ Files: debian/*
 Copyright: 2013-2018, 2022 Benjamin Barenblat <bbaren@debian.org>
 License: Apache-2.0
 
-Files: extern/rss-glib/*.c extern/rss-glib/*.h
-Copyright: 2008 Christian Hergert <chris@dronelabs.com>
-License: LGPL-3+
-
 Files: po/bg.po po/ca.po po/cs.po po/el.po po/fr.po po/it.po po/lt.po po/lv.po po/pt_BR.po po/si.po po/tr.po po/zh_CN.po po/zh_TW.po
 Copyright: 2012-2014, 2016 Rosetta Contributors and Canonical Ltd
 License: GPL-2+
@@ -98,20 +94,3 @@ License: GPL-2
  .
  On Debian systems, the complete text of the GNU General Public License version
  2 can be found in "/usr/share/common-licenses/GPL-2".
-
-License: LGPL-3+
- This library is free software: you can redistribute it and/or modify it under
- the terms of the GNU Lesser General Public License as published by the Free
- Software Foundation, either version 3 of the License, or (at your option) any
- later version.
- .
- This library is distributed in the hope that it will be useful, but WITHOUT ANY
- WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
- details.
- .
- You should have received a copy of the GNU Lesser General Public License along
- with this library.  If not, see <http://www.gnu.org/licenses/>.
- .
- On Debian systems, the complete text of the GNU Lesser General Public License
- version 3 can be found in "/usr/share/common-licenses/LGPL-3".
