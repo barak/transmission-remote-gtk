@@ -2,7 +2,6 @@ Source: transmission-remote-gtk
 Section: net
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends:
- appstream-util (>= 0.7.2),
  debhelper-compat (= 13),
  gettext (>= 0.19.6),
  libappstream-glib-dev,
@@ -13,7 +12,7 @@ Build-Depends:
  libnotify-dev,
  libayatana-appindicator3-dev,
  meson (>= 0.60.0),
- appstream-util,
+ appstream-util (>= 0.7.2),
  python3-docutils | python-docutils,
  desktop-file-utils,
 Standards-Version: 4.7.3
