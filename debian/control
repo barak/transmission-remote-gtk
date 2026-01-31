@@ -16,8 +16,7 @@ Build-Depends:
  libayatana-appindicator3-dev,
  meson (>= 0.60.0),
  perl,
-Standards-Version: 4.7.0
-Rules-Requires-Root: no
+Standards-Version: 4.7.3
 Homepage: https://github.com/transmission-remote-gtk/transmission-remote-gtk
 Vcs-Git: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk.git
 Vcs-Browser: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk/
