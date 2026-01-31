@@ -17,6 +17,12 @@ transmission-remote-gtk (1.6.0-0.1) UNRELEASED; urgency=medium
 
  -- Barak A. Pearlmutter <bap@debian.org>  Tue, 05 Nov 2024 14:46:45 +0000
 
+transmission-remote-gtk (1.5.1-2) unstable; urgency=medium
+
+  * Orphan package.
+
+ -- Benjamin Barenblat <bbaren@debian.org>  Mon, 19 Jan 2026 18:57:02 -0500
+
 transmission-remote-gtk (1.5.1-1) unstable; urgency=medium
 
   * New upstream release (closes: 1009246).

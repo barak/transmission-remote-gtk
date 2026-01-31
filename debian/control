@@ -1,7 +1,7 @@
 Source: transmission-remote-gtk
 Section: net
 Priority: optional
-Maintainer: Benjamin Barenblat <bbaren@debian.org>
+Maintainer: Debian QA Group <packages@qa.debian.org>
 Build-Depends:
  appstream-util (>= 0.7.2),
  debhelper-compat (= 13),
@@ -18,8 +18,6 @@ Build-Depends:
  perl,
 Standards-Version: 4.7.3
 Homepage: https://github.com/transmission-remote-gtk/transmission-remote-gtk
-Vcs-Git: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk.git
-Vcs-Browser: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk/
 
 Package: transmission-remote-gtk
 Architecture: any
