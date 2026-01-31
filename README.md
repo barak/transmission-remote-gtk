@@ -26,7 +26,6 @@ system:
 ### Optional Dependencies
 The following packages are optional dependencies:
 
- - libgeoip, country of origin of peers
  - libappindicator or libayatana-appindicator3, Application tray support
 
 If these libraries are installed at build time they will be automatically
@@ -39,12 +38,12 @@ version of meson is required.
  - meson >= 0.59.0
  - appstream-util (optional, appdata validation)
  - desktop-file-utils (optional, desktop file validation)
- - pod2man (optional, manpage generation)
+ - rst2man (optional, manpage generation)
 
 An example of getting the build dependencies for an Ubuntu/Debian system:
 
 ```
-# apt install gcc meson appstream-util perl
+# apt install gcc meson appstream-util python-docutils
 ```
 
 **NOTE:** Ubuntu and other stable or LTS distros may have outdated versions of
