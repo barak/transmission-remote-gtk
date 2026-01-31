@@ -1,0 +1,21 @@
+From: LaserEyess <LaserEyess@users.noreply.github.com>
+Date: Tue, 30 Dec 2025 11:25:53 -0500
+Subject: Remove mention of libgeoip in README
+
+---
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index aac7232..93aae4a 100644
+--- a/README.md
++++ b/README.md
+@@ -20,7 +20,7 @@ An example command for getting the packages required for an Ubuntu/Debian
+ system:
+ 
+ ```
+-# apt install libgtk-3-dev libgeoip-dev gettext libsoup-3.0-dev libjson-glib-dev
++# apt install libgtk-3-dev gettext libsoup-3.0-dev libjson-glib-dev
+ ```
+ 
+ ### Optional Dependencies

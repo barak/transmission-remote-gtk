@@ -1,0 +1,281 @@
+From: LaserEyess <LaserEyess@users.noreply.github.com>
+Date: Tue, 30 Dec 2025 11:40:20 -0500
+Subject: Reformat meson files
+
+Truth be told, this isn't strictly necessary but meson keeps nagging
+about it and I'm too lazy to switch the reformatter to ignore it. The
+changes are pretty sensible.
+---
+ data/meson.build | 61 +++++++++++++++++++++++++++++++++++++-------------------
+ meson.build      | 47 +++++++++++++++++++++----------------------
+ src/meson.build  | 16 ++++++++-------
+ 3 files changed, 72 insertions(+), 52 deletions(-)
+
+diff --git a/data/meson.build b/data/meson.build
+index 0becf84..70a4799 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -6,11 +6,13 @@ scalable = 'icons' / project_name + '.svg'
+ install_data(scalable, install_dir: icon_dir / 'scalable' / 'apps')
+ 
+ # regular icons
+-foreach size: ['16x16', '22x22', '24x24', '32x32', '48x48']
++foreach size : ['16x16', '22x22', '24x24', '32x32', '48x48']
+   icon_name = 'icons' / project_name + '-@0@.png'.format(size)
+-  install_data(icon_name,
++  install_data(
++    icon_name,
+     install_dir: icon_dir / size / 'apps',
+-    rename: project_name + '.png')
++    rename: project_name + '.png',
++  )
+ endforeach
+ 
+ # man pages
+@@ -20,33 +22,44 @@ if rst2man.found()
+   man_rst_out = '@0@.1.rst'.format(project_name)
+   man_page = '@0@.1'.format(project_name)
+ 
+-  man_rst = configure_file(input: man_rst_in, output: man_rst_out,
+-    configuration:
+-      {'PRETTY_NAME': pretty_name,
+-       'PROJECT_VERSION': project_version})
++  man_rst = configure_file(
++    input: man_rst_in,
++    output: man_rst_out,
++    configuration: {'PRETTY_NAME': pretty_name, 'PROJECT_VERSION': project_version},
++  )
+ 
+-  manpages = custom_target('manpages',
+-    input: man_rst, output: man_page,
+-    command: [rst2man, '--strict', '--no-raw',
+-      '--no-generator', '--no-datestamp',
+-      '@INPUT@', '@OUTPUT@'],
+-      install: true,
+-      install_dir: get_option('mandir') / 'man1')
++  custom_target(
++    'manpages',
++    input: man_rst,
++    output: man_page,
++    command: [
++      rst2man,
++      '--strict',
++      '--no-raw',
++      '--no-generator',
++      '--no-datestamp', '@INPUT@',
++      '@OUTPUT@',
++    ],
++    install: true,
++    install_dir: get_option('mandir') / 'man1',
++  )
+ endif
+ 
+ # gresources.xml
+ gnome = import('gnome')
+-gresource_xml ='@0@.gresource.xml'.format(app_id)
++gresource_xml = '@0@.gresource.xml'.format(app_id)
+ gresources = gnome.compile_resources('trg-resources', gresource_xml)
+ 
+ # desktop file
+ po_dir = meson.project_source_root() / 'po'
+-desktop_file = i18n.merge_file(input: '@0@.desktop.in'.format(app_id),
++desktop_file = i18n.merge_file(
++  input: '@0@.desktop.in'.format(app_id),
+   output: '@0@.desktop'.format(app_id),
+   install: true,
+   install_dir: datadir / 'applications',
+   po_dir: po_dir,
+-  type: 'desktop')
++  type: 'desktop',
++)
+ 
+ desktop_utils = find_program('desktop-file-validate', required: false)
+ if desktop_utils.found()
+@@ -54,13 +67,19 @@ if desktop_utils.found()
+ endif
+ 
+ # appdata
+-appdata_file = i18n.merge_file(input: '@0@.appdata.xml.in'.format(app_id),
++appdata_file = i18n.merge_file(
++  input: '@0@.appdata.xml.in'.format(app_id),
+   output: '@0@.appdata.xml'.format(app_id),
+   install: true,
+   install_dir: datadir / 'metainfo',
+-  po_dir: po_dir)
++  po_dir: po_dir,
++)
+ 
+ appstream_util = find_program('appstream-util', required: false)
+ if appstream_util.found()
+-  test('Validate appdata.xml', appstream_util, args: ['validate-relax', '--nonet', appdata_file])
+-endif
++  test(
++    'Validate appdata.xml',
++    appstream_util,
++    args: ['validate-relax', '--nonet', appdata_file],
++  )
++endif
+\ No newline at end of file
+diff --git a/meson.build b/meson.build
+index ddd1432..fd6c767 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1,13 +1,10 @@
+-project('transmission-remote-gtk', 'c',
++project(
++  'transmission-remote-gtk',
++  'c',
+   license: 'GPL2+',
+   version: '1.7.0',
+   meson_version: '>= 0.60.0',
+-  default_options:[
+-    'b_pie=true',
+-    'c_std=gnu99',
+-    'warning_level=2',
+-    'buildtype=debugoptimized'
+-  ]
++  default_options: ['b_pie=true', 'c_std=gnu99', 'warning_level=2', 'buildtype=debugoptimized'],
+ )
+ 
+ project_name = meson.project_name()
+@@ -30,18 +27,21 @@ glib_min_def = '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_min)
+ add_project_arguments(glib_min_def, language: 'c')
+ 
+ # required dependencies
+-gtk_dep     = dependency('gtk+-3.0', version: '>= 3.22')
+-gio_dep     = dependency('gio-2.0', version: glib_version_str)
+-glib_dep    = dependency('glib-2.0', version: glib_version_str)
+-json_dep    = dependency('json-glib-1.0', version: '>= 1.2.8')
++gtk_dep = dependency('gtk+-3.0', version: '>= 3.22')
++gio_dep = dependency('gio-2.0', version: glib_version_str)
++glib_dep = dependency('glib-2.0', version: glib_version_str)
++json_dep = dependency('json-glib-1.0', version: '>= 1.2.8')
+ libsoup_dep = dependency('libsoup-3.0', version: '>= 3.0')
+ gthread_dep = dependency('gthread-2.0', version: glib_version_str)
+ 
+ trg_deps = [gtk_dep, glib_dep, gio_dep, json_dep, libsoup_dep, gthread_dep]
+ 
+ # optional dependencies
+-libappindicator_dep = dependency('ayatana-appindicator3-0.1',
+-  'appindicator3-0.1', required: get_option('libappindicator'))
++libappindicator_dep = dependency(
++  'ayatana-appindicator3-0.1',
++  'appindicator3-0.1',
++  required: get_option('libappindicator'),
++)
+ 
+ trg_deps += [libappindicator_dep]
+ 
+@@ -59,7 +59,6 @@ if nl_li_feature.enabled() and not nl_langinfo
+ endif
+ nl_langinfo = nl_langinfo and nl_li_feature.allowed()
+ 
+-
+ # config data
+ conf_data = configuration_data()
+ 
+@@ -67,8 +66,7 @@ conf_data.set_quoted('PACKAGE_NAME', project_name)
+ conf_data.set_quoted('PACKAGE_VERSION', project_version)
+ conf_data.set_quoted('GETTEXT_PACKAGE', project_name)
+ conf_data.set_quoted('APPLICATION_ID', app_id)
+-conf_data.set_quoted('LOCALEDIR',
+-  get_option('prefix') / get_option('localedir'))
++conf_data.set_quoted('LOCALEDIR', get_option('prefix') / get_option('localedir'))
+ 
+ # debug options
+ debug = get_option('debug')
+@@ -82,8 +80,11 @@ conf_data.set('G_DISABLE_CAST_CHECKS', not debug)
+ conf_data.set10('ENABLE_NL_LANGINFO', nl_langinfo)
+ 
+ conf_data.set10('HAVE_LIBAPPINDICATOR', libappindicator_dep.found())
+-conf_data.set10('HAVE_LIBAYATANA_APPINDICATOR',
+-  libappindicator_dep.found() and libappindicator_dep.name() == 'ayatana-appindicator3-0.1')
++conf_data.set10(
++  'HAVE_LIBAYATANA_APPINDICATOR',
++  libappindicator_dep.found()
++  and libappindicator_dep.name() == 'ayatana-appindicator3-0.1',
++)
+ 
+ # compiler/linker flags
+ flags = [
+@@ -98,7 +99,7 @@ flags = [
+   '-Werror=pointer-arith',
+   '-Werror=init-self',
+   '-Werror=missing-include-dirs',
+-  '-Werror=date-time'
++  '-Werror=date-time',
+ ]
+ 
+ cflags = cc.get_supported_arguments(flags)
+@@ -110,15 +111,13 @@ add_project_link_arguments(ldflags, language: 'c')
+ 
+ # Windows compiler options
+ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+-  win_cflags = cc.get_supported_arguments(
+-    '-mms-bitfields', '-mwin32', '-mwindows')
++  win_cflags = cc.get_supported_arguments('-mms-bitfields', '-mwin32', '-mwindows')
+   add_project_arguments(win_cflags, language: 'c')
+ 
+-  win_ldflags = cc.get_supported_link_arguments(
+-    '-Wl,--allow-multiple-definition', '-lws2_32', '-lintl', '-lssp')
++  win_ldflags = cc.get_supported_link_arguments('-Wl,--allow-multiple-definition', '-lws2_32', '-lintl', '-lssp')
+   add_project_link_arguments(win_ldflags, language: 'c')
+ endif
+ 
+ subdir('po')
+ subdir('data')
+-subdir('src')
++subdir('src')
+\ No newline at end of file
+diff --git a/src/meson.build b/src/meson.build
+index 15915be..47e63c6 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -6,8 +6,8 @@ src_files = files(
+   'main.c',
+   'requests.c',
+   'session-get.c',
+-  'torrent.c',
+   'torrent-cell-renderer.c',
++  'torrent.c',
+   'trg-about-window.c',
+   'trg-cell-renderer-counter.c',
+   'trg-cell-renderer-epoch.c',
+@@ -23,11 +23,11 @@ src_files = files(
+   'trg-destination-combo.c',
+   'trg-file-parser.c',
+   'trg-file-rename-dialog.c',
+-  'trg-files-model.c',
+   'trg-files-model-common.c',
+-  'trg-files-tree.c',
+-  'trg-files-tree-view.c',
++  'trg-files-model.c',
+   'trg-files-tree-view-common.c',
++  'trg-files-tree-view.c',
++  'trg-files-tree.c',
+   'trg-general-panel.c',
+   'trg-gtk-app.c',
+   'trg-json-widgets.c',
+@@ -55,7 +55,7 @@ src_files = files(
+   'trg-trackers-tree-view.c',
+   'trg-tree-view.c',
+   'upload.c',
+-  'util.c'
++  'util.c',
+ )
+ 
+ # generate config file
+@@ -64,8 +64,10 @@ configure_file(output: 'config.h', configuration: conf_data)
+ # Add gresources
+ src_files += gresources
+ 
+-executable(project_name, 
++executable(
++  project_name,
+   sources: src_files,
+   dependencies: trg_deps,
+   install: true,
+-  pie: true)
++  pie: true,
++)
+\ No newline at end of file

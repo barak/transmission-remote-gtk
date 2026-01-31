@@ -1,0 +1,28 @@
+From: LaserEyess <LaserEyess@users.noreply.github.com>
+Date: Tue, 30 Dec 2025 11:57:06 -0500
+Subject: Add release script to repo
+
+Attempt to formalize releases to catch common errors
+---
+ scripts/release.sh | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ create mode 100644 scripts/release.sh
+
+diff --git a/scripts/release.sh b/scripts/release.sh
+new file mode 100644
+index 0000000..ad7ca36
+--- /dev/null
++++ b/scripts/release.sh
+@@ -0,0 +1,12 @@
++#!/usr/bin/env bash
++set -eo pipefail
++
++# Things to remember:
++# 1. Change `version:` in meson project to $VERSION
++# 2. Update appdata.xml with "release notes" for $VERSION (high level)
++# 3. Commit changes with message "Release $VERSION"
++# 4. tag new commit with $VERSION
++# 5. Run this script
++
++meson setup --wipe release-build
++meson dist -C release-build

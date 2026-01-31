@@ -15,11 +15,12 @@ transmission-remote-gtk (1.7.0-1) unstable; urgency=medium
     - remove libayatana-appindicator patch, functionality is now upstream
     - remove avoidRssGlib patch, librss usage is removed upstream
     - remove testing --nonet patch which is now upstreamed
+    - add upstream post-release commits as quilt patches
   * Remove unused debian/copyright stanza for extern/rss-glib/*
   * Adopt package
   * Update git maintenance repo URL
 
- -- Barak A. Pearlmutter <bap@debian.org>  Sat, 31 Jan 2026 12:22:18 +0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 31 Jan 2026 15:20:38 +0000
 
 transmission-remote-gtk (1.5.1-2) unstable; urgency=medium
 
