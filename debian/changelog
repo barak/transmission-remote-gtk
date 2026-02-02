@@ -1,3 +1,9 @@
+transmission-remote-gtk (1.7.0-2) unstable; urgency=medium
+
+  * Patch to use appstreamcli instead of appstream-util (closes: #1119105)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 02 Feb 2026 12:38:59 +0000
+
 transmission-remote-gtk (1.7.0-1) unstable; urgency=medium
 
   * Enable libappindicator support using libayatana-appindicator3-dev,

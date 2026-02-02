@@ -12,7 +12,7 @@ Build-Depends:
  libnotify-dev,
  libayatana-appindicator3-dev,
  meson (>= 0.60.0),
- appstream-util (>= 0.7.2),
+ appstream,
  python3-docutils | python-docutils,
  desktop-file-utils,
 Standards-Version: 4.7.3
