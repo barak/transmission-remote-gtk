@@ -1,17 +1,36 @@
 From: "Barak A. Pearlmutter" <barak+git@pearlmutter.net>
 Date: Mon, 2 Feb 2026 12:35:10 +0000
-Subject: appstreamcli
+Subject: Use appstreamcli instead of appstream-util when available
 
-Use appstreamcli instead of appstream-util.
+Debian has switched from appstream-util to appstreamcli, other
+platforms are lagging but will likely switch in due course. Therefore
+switch the CI build dependency where possible, and scan for both
+dynamically, preferring appstreamcli when both are available but
+falling back to appstream-util if necessary. Also emit a warning if
+neither is found.
 
 See https://bugs.debian.org/1119105
 
 See https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/269
 ---
- README.md        |  4 ++--
- data/meson.build | 10 +++++-----
- 2 files changed, 7 insertions(+), 7 deletions(-)
+ .github/workflows/c-cpp.yml |  2 +-
+ README.md                   |  4 ++--
+ data/meson.build            | 19 +++++++++++++++++--
+ 3 files changed, 20 insertions(+), 5 deletions(-)
 
+diff --git a/.github/workflows/c-cpp.yml b/.github/workflows/c-cpp.yml
+index 48d3b43..9cc2b06 100644
+--- a/.github/workflows/c-cpp.yml
++++ b/.github/workflows/c-cpp.yml
+@@ -22,7 +22,7 @@ jobs:
+                                gettext \
+                                \
+                                libappstream-dev \
+-                               appstream-util
++                               appstream
+       - name: meson configure
+         run: meson setup build
+       - name: build
 diff --git a/README.md b/README.md
 index 93aae4a..8e9b349 100644
 --- a/README.md
@@ -34,24 +53,36 @@ index 93aae4a..8e9b349 100644
  
  **NOTE:** Ubuntu and other stable or LTS distros may have outdated versions of
 diff --git a/data/meson.build b/data/meson.build
-index 70a4799..776ef72 100644
+index 70a4799..77b6d77 100644
 --- a/data/meson.build
 +++ b/data/meson.build
-@@ -75,11 +75,11 @@ appdata_file = i18n.merge_file(
+@@ -75,11 +75,26 @@ appdata_file = i18n.merge_file(
    po_dir: po_dir,
  )
  
--appstream_util = find_program('appstream-util', required: false)
--if appstream_util.found()
++# validate appdata
++#
++# Note: appstream-util is deprecated on Debian GNU/Linux, which is switching to appstreamcli.
++#  However appstreamcli is not yet available through brew on MacOS or pacman Microsoft Windows.
++#  Therefore, to future-proof this we use whatever is available, preferring appstreamcli.
++#
 +appstreamcli = find_program('appstreamcli', required: false)
+ appstream_util = find_program('appstream-util', required: false)
+-if appstream_util.found()
 +if appstreamcli.found()
-   test(
-     'Validate appdata.xml',
--    appstream_util,
--    args: ['validate-relax', '--nonet', appdata_file],
++  test(
++    'Validate appdata.xml',
 +    appstreamcli,
 +    args: ['validate', '--pedantic', '--explain', '--no-net', appdata_file],
++  )
++elif appstream_util.found()
+   test(
+     'Validate appdata.xml',
+     appstream_util,
+     args: ['validate-relax', '--nonet', appdata_file],
    )
 -endif
 \ No newline at end of file
++else
++  warning('Neither appstreamcli nor appstream-util found; skipping appdata.xml validation')
 +endif
