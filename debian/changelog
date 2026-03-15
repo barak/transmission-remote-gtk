@@ -1,8 +1,10 @@
-transmission-remote-gtk (1.7.0-3) UNRELEASED; urgency=medium
+transmission-remote-gtk (1.7.1-1) unstable; urgency=medium
 
-  * Fiddle with appstreamcli patch to track upstream
+  * New upstream version
+  * Remove patches: apstream-util ↦ appstreamcli is upstreamed, the others
+    were picked from upstream devel
 
- -- Barak A. Pearlmutter <bap@debian.org>  Tue, 10 Mar 2026 15:42:20 +0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 15 Mar 2026 10:20:50 +0000
 
 transmission-remote-gtk (1.7.0-2) unstable; urgency=medium
 
