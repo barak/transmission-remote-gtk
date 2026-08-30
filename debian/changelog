@@ -1,9 +1,10 @@
-transmission-remote-gtk (1.7.1-2) UNRELEASED; urgency=medium
+transmission-remote-gtk (1.7.1-2) unstable; urgency=medium
 
   * bump standards version
   * debhelper 14
+  * remove unnecessary build dependency on libappstream-glib-dev (closes: #1146160)
 
- -- Barak A. Pearlmutter <bap@debian.org>  Sun, 30 Aug 2026 20:01:56 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 30 Aug 2026 20:03:13 +0100
 
 transmission-remote-gtk (1.7.1-1) unstable; urgency=medium
 
